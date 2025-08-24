@@ -8,7 +8,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 local old = playerGui:FindFirstChild("FloodEscapeClassicUI")
 if old then old:Destroy() end
 
-local BASE_W, BASE_H = 460, 360
+local BASE_W, BASE_H = 460, 560
 local BG = Color3.fromRGB(10,10,14)
 local STROKE = Color3.fromRGB(70,40,110)
 local PRIMARY = Color3.fromRGB(120,85,220)
@@ -137,29 +137,20 @@ local function halfButton(text, color)
 end
 
 sectionLabel("Training Points Grinder")
-
-local tpRow = Instance.new("Frame")
-tpRow.Size = UDim2.new(1, 0, 0, 44)
-tpRow.BackgroundTransparency = 1
-tpRow.Parent = content
-local tpLay = Instance.new("UIListLayout", tpRow)
-tpLay.FillDirection = Enum.FillDirection.Horizontal
-tpLay.Padding = UDim.new(0, 10)
-
-local enableBtn = halfButton("Enable", PRIMARY)
-enableBtn.Parent = tpRow
-local disableBtn = halfButton("Disable", MUTED)
-disableBtn.TextColor3 = TEXT
-disableBtn.Parent = tpRow
+local tpRow = Instance.new("Frame"); tpRow.Size = UDim2.new(1, 0, 0, 44); tpRow.BackgroundTransparency = 1; tpRow.Parent = content
+local tpLay = Instance.new("UIListLayout", tpRow); tpLay.FillDirection = Enum.FillDirection.Horizontal; tpLay.Padding = UDim.new(0, 10)
+local enableBtn = halfButton("Enable", PRIMARY); enableBtn.Parent = tpRow
+local disableBtn = halfButton("Disable", MUTED); disableBtn.TextColor3 = TEXT; disableBtn.Parent = tpRow
 
 sectionLabel("Instant Finish")
+local easyBtn = pillButton("Complete Easy", PRIMARY); easyBtn.Parent = content
+local medBtn  = pillButton("Complete Medium", PRIMARY); medBtn.Parent = content
+local hardBtn = pillButton("Complete Hard", PRIMARY); hardBtn.Parent = content
 
-local easyBtn = pillButton("Complete Easy", PRIMARY)
-easyBtn.Parent = content
-local medBtn = pillButton("Complete Medium", PRIMARY)
-medBtn.Parent = content
-local hardBtn = pillButton("Complete Hard", PRIMARY)
-hardBtn.Parent = content
+sectionLabel("Auto Complete")
+local autoEasyBtn = pillButton("Auto Easy: Enable", PRIMARY); autoEasyBtn.Parent = content
+local autoMedBtn  = pillButton("Auto Medium: Enable", PRIMARY); autoMedBtn.Parent = content
+local autoHardBtn = pillButton("Auto Hard: Enable", PRIMARY); autoHardBtn.Parent = content
 
 local status = Instance.new("TextLabel")
 status.BackgroundTransparency = 1
@@ -171,10 +162,7 @@ status.TextColor3 = SUBTEXT
 status.Text = "Status: Ready"
 status.Parent = content
 
-local C1 = CFrame.new(-464.641602, 254.819977, 293.367981,
-	-0.018149823,  2.06350688e-08,  0.999835253,
-	 2.04697859e-08, 1,            -2.02668851e-08,
-	-0.999835253,  2.00985735e-08, -0.018149823)
+local C1 = CFrame.new(-464.641602, 254.819977, 293.367981, -0.018149823, 2.06350688e-08, 0.999835253, 2.04697859e-08, 1, -2.02668851e-08, -0.999835253, 2.00985735e-08, -0.018149823)
 local C2 = CFrame.new(-560.651001, 241.020004, 227.311768, 0,0,-1, 0,1,0, 1,0,0)
 local C3 = CFrame.new(-708.651001, 239.020081, 75.3117676, -1,0,0, 0,1,0, 0,0,-1)
 local C_STOP = CFrame.new(-392.58374, 254.839981, 236.647614)
@@ -183,45 +171,14 @@ local FIN_EASY  = CFrame.new(-241, 160.600006,  62)
 local FIN_MED   = CFrame.new(-241, 160.600006, 192)
 local FIN_HARD  = CFrame.new(-241, 160.600006, 322)
 
-local teleporting = false
-local awaiting = false
-local hb
+local teleporting, awaiting, hb = false, false, nil
+local function getChar() local c = player.Character or player.CharacterAdded:Wait(); if not c.PrimaryPart then local hrp = c:FindFirstChild("HumanoidRootPart"); if hrp then c.PrimaryPart = hrp end end return c end
+local function pivot(cf) local c = getChar(); if c and c.Parent then c:PivotTo(cf) end end
+Players.LocalPlayer.CharacterAdded:Connect(function() if teleporting then task.delay(0.1, function() if teleporting then pivot(C2) end end) end end)
 
-local function getChar()
-	local c = player.Character or player.CharacterAdded:Wait()
-	if not c.PrimaryPart then
-		local hrp = c:FindFirstChild("HumanoidRootPart")
-		if hrp then c.PrimaryPart = hrp end
-	end
-	return c
-end
-
-local function pivot(cf)
-	local c = getChar()
-	if c and c.Parent then c:PivotTo(cf) end
-end
-
-Players.LocalPlayer.CharacterAdded:Connect(function()
-	if teleporting then task.delay(0.1, function() if teleporting then pivot(C2) end end) end
-end)
-
-local function setIdle()
-	enableBtn.BackgroundColor3 = PRIMARY
-	enableBtn.Text = "Enable"
-	disableBtn.BackgroundColor3 = MUTED
-	disableBtn.TextColor3 = TEXT
-end
-local function setConfirm()
-	enableBtn.BackgroundColor3 = PRIMARY_L
-	enableBtn.Text = "Begin?"
-	disableBtn.BackgroundColor3 = MUTED
-end
-local function setRunning()
-	enableBtn.BackgroundColor3 = Color3.fromRGB(70,68,90)
-	enableBtn.Text = "Running..."
-	disableBtn.BackgroundColor3 = PRIMARY
-	disableBtn.TextColor3 = Color3.new(1,1,1)
-end
+local function setIdle() enableBtn.BackgroundColor3 = PRIMARY; enableBtn.Text = "Enable"; disableBtn.BackgroundColor3 = MUTED; disableBtn.TextColor3 = TEXT end
+local function setConfirm() enableBtn.BackgroundColor3 = PRIMARY_L; enableBtn.Text = "Begin?"; disableBtn.BackgroundColor3 = MUTED end
+local function setRunning() enableBtn.BackgroundColor3 = Color3.fromRGB(70,68,90); enableBtn.Text = "Running..."; disableBtn.BackgroundColor3 = PRIMARY; disableBtn.TextColor3 = Color3.new(1,1,1) end
 
 enableBtn.MouseButton1Click:Connect(function()
 	if teleporting then return end
@@ -258,24 +215,201 @@ easyBtn.MouseButton1Click:Connect(function() pivot(FIN_EASY) end)
 medBtn.MouseButton1Click:Connect(function() pivot(FIN_MED) end)
 hardBtn.MouseButton1Click:Connect(function() pivot(FIN_HARD) end)
 
-local minimized = false
-local savedSize = window.Size
+local function newJanitor()
+	return { list = {}, add = function(self,c) table.insert(self.list,c) end, clear = function(self) for _,cn in ipairs(self.list) do pcall(function() cn:Disconnect() end) end table.clear(self.list) end }
+end
+
+local function makeRunner(button, rootName, displayName, stopOthersFn)
+	local STEP, YOFF = 0.25, 3
+	local SECTIONS = {"S1","S2","S3"}
+	local DELETE = {CodeDoor=true,Door1=true,Door2=true,Door3=true,Door4=true,Door5=true,Door6=true,Water1=true,Water2=true,Water3=true,Water4=true,Water4D=true}
+	local jan = newJanitor()
+	local sweeper, busy, on, dead = nil, false, false, false
+
+	local function hrp() local ch = player.Character or player.CharacterAdded:Wait(); return ch:FindFirstChild("HumanoidRootPart") or ch:WaitForChild("HumanoidRootPart") end
+	local function tp(v) local h = hrp(); h.CFrame = CFrame.new(v + Vector3.new(0, YOFF, 0), h.Position + h.CFrame.LookVector) end
+	local function isUnder(inst, anc) local p = inst while p do if p == anc then return true end p = p.Parent end return false end
+	local function delUnder(main) if not main then return end for _,d in ipairs(main:GetDescendants()) do if DELETE[d.Name] then pcall(function() d:Destroy() end) end end end
+	local function startSweeper(root) if sweeper then sweeper:Disconnect(); sweeper=nil end sweeper = RunService.Heartbeat:Connect(function() local m = root and root:FindFirstChild("Main"); if m then delUnder(m) end end) end
+	local function hook(root)
+		jan:clear()
+		local main = root and root:FindFirstChild("Main")
+		if main then jan:add(main.DescendantAdded:Connect(function(inst) if DELETE[inst.Name] then pcall(function() inst:Destroy() end) end end)) end
+		if root then
+			jan:add(root.ChildAdded:Connect(function(ch)
+				if ch.Name == "Main" then
+					delUnder(ch)
+					if not sweeper then startSweeper(root) end
+					jan:add(ch.DescendantAdded:Connect(function(inst) if DELETE[inst.Name] then pcall(function() inst:Destroy() end) end end))
+				end
+			end))
+			jan:add(root.DescendantAdded:Connect(function(inst)
+				if DELETE[inst.Name] then
+					local m = root:FindFirstChild("Main")
+					if m and isUnder(inst, m) then pcall(function() inst:Destroy() end) end
+				end
+			end))
+		end
+	end
+	local function collect(root, sectionName)
+		local out = {}
+		local section = root and root:FindFirstChild(sectionName)
+		if not section then return out end
+		for _,obj in ipairs(section:GetChildren()) do
+			if obj:IsA("Model") and (obj.Name=="Switche" or obj.Name=="Switch") then
+				local b = obj:FindFirstChild("Button")
+				if b and b:IsA("BasePart") then b.CanCollide=false table.insert(out,b.Position) end
+			end
+		end
+		return out
+	end
+	local function exits(root)
+		local out = {}
+		local main = root and root:FindFirstChild("Main")
+		if main then
+			local exit = main:FindFirstChild("Exit")
+			if not exit then for _,d in ipairs(main:GetDescendants()) do if d:IsA("BasePart") and d.Name=="Exit" then exit=d break end end end
+			if exit and exit:IsA("BasePart") then exit.CanCollide=false table.insert(out, exit.Position) end
+		end
+		local entry = root and root:FindFirstChild("Entry")
+		if entry then
+			local lift = entry:FindFirstChild("LiftEntryInfo")
+			if not lift then for _,d in ipairs(entry:GetDescendants()) do if d:IsA("BasePart") and d.Name=="LiftEntryInfo" then lift=d break end end end
+			if lift and lift:IsA("BasePart") then lift.CanCollide=false table.insert(out, lift.Position) end
+		end
+		return out
+	end
+	local function route()
+		local root = workspace:FindFirstChild(rootName)
+		if not root then return {} end
+		local r = {}
+		for _,s in ipairs(SECTIONS) do for _,p in ipairs(collect(root, s)) do table.insert(r, p) end end
+		for _,p in ipairs(exits(root)) do table.insert(r, p) end
+		return r
+	end
+	local function allPresent()
+		local root = workspace:FindFirstChild(rootName)
+		if not root then return false end
+		for _,n in ipairs(SECTIONS) do if not root:FindFirstChild(n) then return false end end
+		return true
+	end
+	local function allGone()
+		local root = workspace:FindFirstChild(rootName)
+		if not root then return true end
+		for _,n in ipairs(SECTIONS) do if root:FindFirstChild(n) then return false end end
+		return true
+	end
+	local function waitPresent() while not allPresent() do task.wait(0.1) end end
+	local function waitGone() while not allGone() do task.wait(0.1) end end
+	local function runOnce()
+		if busy or dead then return end
+		busy = true
+		for _,pos in ipairs(route()) do
+			if dead or not on then break end
+			tp(pos)
+			task.wait(STEP)
+		end
+		busy = false
+	end
+	local function loop()
+		if busy or dead then return end
+		local root = workspace:FindFirstChild(rootName)
+		startSweeper(root)
+		hook(root)
+		runOnce()
+		if allPresent() then waitGone() end
+		while on and not dead do
+			waitPresent()
+			for _=1,40 do
+				if dead or not on then break end
+				local r = workspace:FindFirstChild(rootName)
+				delUnder(r and r:FindFirstChild("Main"))
+				task.wait(0.1)
+			end
+			if dead or not on then break end
+			task.wait(4)
+			runOnce()
+			waitGone()
+		end
+	end
+	local function stop()
+		on = false
+		if sweeper then sweeper:Disconnect() sweeper = nil end
+		jan:clear()
+		button.BackgroundColor3 = PRIMARY
+		button.Text = displayName .. ": Enable"
+	end
+	button.MouseButton1Click:Connect(function()
+		if dead then return end
+		if not on and stopOthersFn then stopOthersFn() end
+		on = not on
+		if on then
+			button.BackgroundColor3 = Color3.fromRGB(70,68,90)
+			button.Text = displayName .. ": Running"
+			status.Text = "Status: " .. displayName .. " running"
+			task.spawn(loop)
+		else
+			stop()
+			status.Text = "Status: " .. displayName .. " disabled"
+		end
+	end)
+	local function deathHook()
+		local function bind(c)
+			local h = c:FindFirstChildOfClass("Humanoid")
+			if h then
+				h.Died:Connect(function()
+					dead = true
+					on = false
+					busy = false
+					stop()
+					button.BackgroundColor3 = MUTED
+					button.Text = displayName .. ": Stopped"
+					status.Text = "Status: " .. displayName .. " stopped (death)"
+				end)
+			end
+		end
+		if player.Character then bind(player.Character) end
+		player.CharacterAdded:Connect(bind)
+	end
+	deathHook()
+	return { isOn = function() return on end, stop = stop }
+end
+
+local autoEasy = nil
+local autoMed  = nil
+local autoHard = nil
+
+autoEasy = makeRunner(autoEasyBtn, "Easy", "Auto Easy", function()
+	if autoMed and autoMed.isOn() then autoMed.stop() end
+	if autoHard and autoHard.isOn() then autoHard.stop() end
+end)
+autoMed = makeRunner(autoMedBtn, "Medium", "Auto Medium", function()
+	if autoEasy and autoEasy.isOn() then autoEasy.stop() end
+	if autoHard and autoHard.isOn() then autoHard.stop() end
+end)
+autoHard = makeRunner(autoHardBtn, "Hard", "Auto Hard", function()
+	if autoEasy and autoEasy.isOn() then autoEasy.stop() end
+	if autoMed and autoMed.isOn() then autoMed.stop() end
+end)
+
+local minimized, savedSize = false, window.Size
 minimizeBtn.MouseButton1Click:Connect(function()
 	minimized = not minimized
 	if minimized then
 		savedSize = window.Size
-		TweenService:Create(window, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-			{Size = UDim2.fromOffset(BASE_W, 56)}):Play()
+		TweenService:Create(window, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromOffset(BASE_W, 56)}):Play()
 		content.Visible = false
 	else
-		TweenService:Create(window, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-			{Size = savedSize}):Play()
+		TweenService:Create(window, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = savedSize}):Play()
 		task.delay(0.18, function() content.Visible = true end)
 	end
 end)
 
 closeBtn.MouseButton1Click:Connect(function()
-	if hb then hb:Disconnect(); hb = nil end
+	if hb then hb:Disconnect() end
+	if autoEasy then autoEasy.stop() end
+	if autoMed then autoMed.stop() end
+	if autoHard then autoHard.stop() end
 	gui:Destroy()
 end)
 
@@ -296,5 +430,4 @@ do
 end
 
 window.Size = UDim2.fromOffset(BASE_W, 0)
-TweenService:Create(window, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-	{Size = UDim2.fromOffset(BASE_W, BASE_H)}):Play()
+TweenService:Create(window, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromOffset(BASE_W, BASE_H)}):Play()
