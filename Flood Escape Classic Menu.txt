@@ -83,8 +83,8 @@ local function makeIcon(txt)
 	return b
 end
 
-local minimizeBtn = makeIcon("—")
 local closeBtn = makeIcon("X")
+local minimizeBtn = makeIcon("—")
 
 local content = Instance.new("Frame")
 content.Size = UDim2.new(1, -24, 1, -64)
@@ -211,9 +211,9 @@ disableBtn.MouseButton1Click:Connect(function()
 	pivot(C_STOP)
 end)
 
-easyBtn.MouseButton1Click:Connect(function() pivot(FIN_EASY) end)
-medBtn.MouseButton1Click:Connect(function() pivot(FIN_MED) end)
-hardBtn.MouseButton1Click:Connect(function() pivot(FIN_HARD) end)
+easyBtn.MouseButton1Click:Connect(function() task.wait(0.5); pivot(FIN_EASY) end)
+medBtn.MouseButton1Click:Connect(function() task.wait(0.5); pivot(FIN_MED) end)
+hardBtn.MouseButton1Click:Connect(function() task.wait(0.5); pivot(FIN_HARD) end)
 
 local function newJanitor()
 	return { list = {}, add = function(self,c) table.insert(self.list,c) end, clear = function(self) for _,cn in ipairs(self.list) do pcall(function() cn:Disconnect() end) end table.clear(self.list) end }
@@ -255,10 +255,10 @@ local function makeRunner(button, rootName, displayName, stopOthersFn)
 		local out = {}
 		local section = root and root:FindFirstChild(sectionName)
 		if not section then return out end
-		for _,obj in ipairs(section:GetChildren()) do
+		for _, obj in ipairs(section:GetChildren()) do
 			if obj:IsA("Model") and (obj.Name=="Switche" or obj.Name=="Switch") then
 				local b = obj:FindFirstChild("Button")
-				if b and b:IsA("BasePart") then b.CanCollide=false table.insert(out,b.Position) end
+				if b and b:IsA("BasePart") then b.CanCollide=false table.insert(out,{pos=b.Position,kind="Button"}) end
 			end
 		end
 		return out
@@ -269,13 +269,13 @@ local function makeRunner(button, rootName, displayName, stopOthersFn)
 		if main then
 			local exit = main:FindFirstChild("Exit")
 			if not exit then for _,d in ipairs(main:GetDescendants()) do if d:IsA("BasePart") and d.Name=="Exit" then exit=d break end end end
-			if exit and exit:IsA("BasePart") then exit.CanCollide=false table.insert(out, exit.Position) end
+			if exit and exit:IsA("BasePart") then exit.CanCollide=false table.insert(out,{pos=exit.Position,kind="Exit"}) end
 		end
 		local entry = root and root:FindFirstChild("Entry")
 		if entry then
 			local lift = entry:FindFirstChild("LiftEntryInfo")
 			if not lift then for _,d in ipairs(entry:GetDescendants()) do if d:IsA("BasePart") and d.Name=="LiftEntryInfo" then lift=d break end end end
-			if lift and lift:IsA("BasePart") then lift.CanCollide=false table.insert(out, lift.Position) end
+			if lift and lift:IsA("BasePart") then lift.CanCollide=false table.insert(out,{pos=lift.Position,kind="Lift"}) end
 		end
 		return out
 	end
@@ -283,8 +283,8 @@ local function makeRunner(button, rootName, displayName, stopOthersFn)
 		local root = workspace:FindFirstChild(rootName)
 		if not root then return {} end
 		local r = {}
-		for _,s in ipairs(SECTIONS) do for _,p in ipairs(collect(root, s)) do table.insert(r, p) end end
-		for _,p in ipairs(exits(root)) do table.insert(r, p) end
+		for _,s in ipairs(SECTIONS) do for _,e in ipairs(collect(root, s)) do table.insert(r, e) end end
+		for _,e in ipairs(exits(root)) do table.insert(r, e) end
 		return r
 	end
 	local function allPresent()
@@ -304,9 +304,10 @@ local function makeRunner(button, rootName, displayName, stopOthersFn)
 	local function runOnce()
 		if busy or dead then return end
 		busy = true
-		for _,pos in ipairs(route()) do
+		for _,e in ipairs(route()) do
 			if dead or not on then break end
-			tp(pos)
+			if e.kind == "Exit" or e.kind == "Lift" then task.wait(0.5) end
+			tp(e.pos)
 			task.wait(STEP)
 		end
 		busy = false
@@ -365,6 +366,13 @@ local function makeRunner(button, rootName, displayName, stopOthersFn)
 					button.BackgroundColor3 = MUTED
 					button.Text = displayName .. ": Stopped"
 					status.Text = "Status: " .. displayName .. " stopped (death)"
+					task.spawn(function()
+						task.wait(3)
+						dead = false
+						button.BackgroundColor3 = PRIMARY
+						button.Text = displayName .. ": Enable"
+						status.Text = "Status: Ready"
+					end)
 				end)
 			end
 		end
@@ -375,9 +383,7 @@ local function makeRunner(button, rootName, displayName, stopOthersFn)
 	return { isOn = function() return on end, stop = stop }
 end
 
-local autoEasy = nil
-local autoMed  = nil
-local autoHard = nil
+local autoEasy, autoMed, autoHard
 
 autoEasy = makeRunner(autoEasyBtn, "Easy", "Auto Easy", function()
 	if autoMed and autoMed.isOn() then autoMed.stop() end
