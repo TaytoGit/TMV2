@@ -1,6 +1,6 @@
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -8,8 +8,14 @@ local playerGui = player:WaitForChild("PlayerGui")
 local old = playerGui:FindFirstChild("FloodEscapeClassicUI")
 if old then old:Destroy() end
 
-local BASE_W, BASE_H = 420, 330
-local DROP_ITEM_H, DROP_PAD, ANIM_T = 32, 2, 0.16
+local BASE_W, BASE_H = 460, 360
+local BG = Color3.fromRGB(10,10,14)
+local STROKE = Color3.fromRGB(70,40,110)
+local PRIMARY = Color3.fromRGB(120,85,220)
+local PRIMARY_L = Color3.fromRGB(150,115,245)
+local MUTED = Color3.fromRGB(46,44,58)
+local TEXT = Color3.fromRGB(235,232,255)
+local SUBTEXT = Color3.fromRGB(220,215,235)
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "FloodEscapeClassicUI"
@@ -21,20 +27,16 @@ local window = Instance.new("Frame")
 window.Size = UDim2.fromOffset(BASE_W, BASE_H)
 window.Position = UDim2.new(0.5, 0, 0.5, 0)
 window.AnchorPoint = Vector2.new(0.5, 0.5)
-window.BackgroundColor3 = Color3.fromRGB(10, 10, 14)
+window.BackgroundColor3 = BG
 window.BorderSizePixel = 0
 window.Parent = gui
-
 Instance.new("UICorner", window).CornerRadius = UDim.new(0, 16)
-local stroke = Instance.new("UIStroke", window)
-stroke.Color = Color3.fromRGB(70, 40, 110)
-stroke.Thickness = 1.5
-
-local grad = Instance.new("UIGradient", window)
-grad.Rotation = 90
+local stroke = Instance.new("UIStroke", window); stroke.Color = STROKE; stroke.Thickness = 1.5
+local grad = Instance.new("UIGradient", window); grad.Rotation = 90
 grad.Color = ColorSequence.new{
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(75, 0, 130)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0)),
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(12,12,16)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(20,16,28)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(42,8,68)),
 }
 
 local titleBar = Instance.new("Frame")
@@ -49,7 +51,7 @@ title.Position = UDim2.fromOffset(16, 0)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 18
 title.TextXAlignment = Enum.TextXAlignment.Left
-title.TextColor3 = Color3.fromRGB(255,255,255)
+title.TextColor3 = TEXT
 title.Text = "Tayto's Flood Escape Classic Menu"
 title.Parent = titleBar
 
@@ -59,34 +61,30 @@ btnHolder.Size = UDim2.fromOffset(96, 28)
 btnHolder.AnchorPoint = Vector2.new(1, 0.5)
 btnHolder.Position = UDim2.new(1, -10, 0.5, 0)
 btnHolder.Parent = titleBar
-
 local btnLayout = Instance.new("UIListLayout", btnHolder)
 btnLayout.FillDirection = Enum.FillDirection.Horizontal
+btnLayout.Padding = UDim.new(0, 8)
 btnLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
 btnLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-btnLayout.Padding = UDim.new(0, 8)
 
-local function makeIconButton(name, text)
+local function makeIcon(txt)
 	local b = Instance.new("TextButton")
-	b.Name = name
-	b.Text = text
+	b.Text = txt
 	b.Size = UDim2.fromOffset(44, 28)
 	b.BackgroundColor3 = Color3.fromRGB(30,30,40)
 	b.BorderSizePixel = 0
 	b.AutoButtonColor = false
-	b.Font = Enum.Font.GothamBold
+	b.Font = Enum.Font.GothamSemibold
 	b.TextSize = 14
-	b.TextColor3 = Color3.fromRGB(255,255,255)
+	b.TextColor3 = TEXT
 	Instance.new("UICorner", b).CornerRadius = UDim.new(0, 8)
-	local s = Instance.new("UIStroke", b)
-	s.Color = Color3.fromRGB(80,60,120)
-	s.Thickness = 1
+	local s = Instance.new("UIStroke", b); s.Color = Color3.fromRGB(80,60,120); s.Thickness = 1
 	b.Parent = btnHolder
 	return b
 end
 
-local minimizeBtn = makeIconButton("Minimize", "—")
-local closeBtn    = makeIconButton("Close", "X")
+local minimizeBtn = makeIcon("—")
+local closeBtn = makeIcon("X")
 
 local content = Instance.new("Frame")
 content.Size = UDim2.new(1, -24, 1, -64)
@@ -99,178 +97,170 @@ layout.FillDirection = Enum.FillDirection.Vertical
 layout.Padding = UDim.new(0, 10)
 layout.SortOrder = Enum.SortOrder.LayoutOrder
 
-local welcome = Instance.new("Frame")
-welcome.LayoutOrder = 1
-welcome.BackgroundColor3 = Color3.fromRGB(26,24,34)
-welcome.BorderSizePixel = 0
-welcome.Size = UDim2.new(1, 0, 0, 92)
-welcome.Parent = content
-Instance.new("UICorner", welcome).CornerRadius = UDim.new(0, 12)
-local wStroke = Instance.new("UIStroke", welcome); wStroke.Color = Color3.fromRGB(75,55,110)
-local padIn = Instance.new("UIPadding", welcome)
-padIn.PaddingTop = UDim.new(0, 12); padIn.PaddingBottom = UDim.new(0, 12); padIn.PaddingLeft = UDim.new(0, 12); padIn.PaddingRight = UDim.new(0, 12)
-
-local wTitle = Instance.new("TextLabel")
-wTitle.BackgroundTransparency = 1
-wTitle.Size = UDim2.new(1, 0, 0, 22)
-wTitle.Font = Enum.Font.GothamBold
-wTitle.TextSize = 16
-wTitle.TextXAlignment = Enum.TextXAlignment.Left
-wTitle.TextColor3 = Color3.fromRGB(255,255,255)
-wTitle.Text = "Welcome!"
-wTitle.Parent = welcome
-
-local wBody = Instance.new("TextLabel")
-wBody.BackgroundTransparency = 1
-wBody.Position = UDim2.fromOffset(0, 26)
-wBody.Size = UDim2.new(1, 0, 1, -30)
-wBody.Font = Enum.Font.Gotham
-wBody.TextSize = 14
-wBody.TextWrapped = true
-wBody.TextXAlignment = Enum.TextXAlignment.Left
-wBody.TextYAlignment = Enum.TextYAlignment.Top
-wBody.TextColor3 = Color3.fromRGB(220,215,235)
-wBody.Text = "Pick a Flood Escape Classic script, then press Execute."
-wBody.Parent = welcome
-
-local lbl = Instance.new("TextLabel")
-lbl.LayoutOrder = 2
-lbl.BackgroundTransparency = 1
-lbl.Size = UDim2.new(1, 0, 0, 20)
-lbl.Font = Enum.Font.GothamBold
-lbl.TextSize = 16
-lbl.TextXAlignment = Enum.TextXAlignment.Left
-lbl.TextColor3 = Color3.fromRGB(255,255,255)
-lbl.Text = "Flood Escape Classic Scripts"
-lbl.Parent = content
-
-local ddFrame = Instance.new("Frame")
-ddFrame.LayoutOrder = 3
-ddFrame.Size = UDim2.new(1, 0, 0, 44)
-ddFrame.BackgroundColor3 = Color3.fromRGB(28,26,38)
-ddFrame.BorderSizePixel = 0
-ddFrame.ClipsDescendants = false
-ddFrame.Parent = content
-Instance.new("UICorner", ddFrame).CornerRadius = UDim.new(0, 10)
-local ddStroke = Instance.new("UIStroke", ddFrame); ddStroke.Color = Color3.fromRGB(90,70,140)
-
-local ddBtn = Instance.new("TextButton")
-ddBtn.Size = UDim2.new(1, 0, 1, 0)
-ddBtn.BackgroundTransparency = 1
-ddBtn.Text = "Select a script ▼"
-ddBtn.Font = Enum.Font.GothamBold
-ddBtn.TextSize = 16
-ddBtn.TextXAlignment = Enum.TextXAlignment.Left
-ddBtn.TextColor3 = Color3.fromRGB(255,255,255)
-ddBtn.AutoButtonColor = false
-ddBtn.Parent = ddFrame
-local ddPad = Instance.new("UIPadding", ddBtn); ddPad.PaddingLeft = UDim.new(0, 12); ddPad.PaddingRight = UDim.new(0, 12)
-
-local menu = Instance.new("Frame")
-menu.Name = "Options"
-menu.Size = UDim2.new(1, 0, 0, 0)
-menu.Position = UDim2.new(0, 0, 0, 44)
-menu.BackgroundColor3 = Color3.fromRGB(20,18,28)
-menu.BorderSizePixel = 0
-menu.Visible = false
-menu.ClipsDescendants = true
-menu.ZIndex = 50
-menu.Parent = ddFrame
-Instance.new("UICorner", menu).CornerRadius = UDim.new(0, 10)
-local menuStroke = Instance.new("UIStroke", menu); menuStroke.Color = Color3.fromRGB(100,80,160)
-local menuLayout = Instance.new("UIListLayout", menu)
-menuLayout.FillDirection = Enum.FillDirection.Vertical
-menuLayout.Padding = UDim.new(0, DROP_PAD)
-
-local options = {
-	"Training Points Grinder",
-	"Instant Finish",
-}
-local selected = nil
-
-local function setSelected(v)
-	selected = v
-	if v then ddBtn.Text = v .. " ▼" else ddBtn.Text = "Select a script ▼" end
+local function sectionLabel(text)
+	local lbl = Instance.new("TextLabel")
+	lbl.BackgroundTransparency = 1
+	lbl.Size = UDim2.new(1, 0, 0, 20)
+	lbl.Font = Enum.Font.GothamBold
+	lbl.TextSize = 16
+	lbl.TextXAlignment = Enum.TextXAlignment.Left
+	lbl.TextColor3 = TEXT
+	lbl.Text = text
+	lbl.Parent = content
+	return lbl
 end
 
-local function setMenuOpen(open)
-	local targetH = open and (#options) * (DROP_ITEM_H + DROP_PAD) or 0
-	if open then menu.Visible = true end
-	TweenService:Create(menu, TweenInfo.new(ANIM_T, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		Size = UDim2.new(1, 0, 0, targetH)
-	}):Play()
-	if not open then task.delay(ANIM_T, function() menu.Visible = false end) end
+local function pillButton(text, color)
+	local b = Instance.new("TextButton")
+	b.Size = UDim2.new(1, 0, 0, 44)
+	b.BackgroundColor3 = color
+	b.AutoButtonColor = false
+	b.Font = Enum.Font.GothamSemibold
+	b.TextSize = 16
+	b.TextColor3 = Color3.new(1,1,1)
+	b.Text = text
+	Instance.new("UICorner", b).CornerRadius = UDim.new(0, 10)
+	return b
 end
 
-for _, text in ipairs(options) do
-	local opt = Instance.new("TextButton")
-	opt.Size = UDim2.new(1, 0, 0, DROP_ITEM_H)
-	opt.BackgroundTransparency = 1
-	opt.Text = text
-	opt.Font = Enum.Font.Gotham
-	opt.TextSize = 14
-	opt.TextXAlignment = Enum.TextXAlignment.Left
-	opt.TextColor3 = Color3.fromRGB(210,205,230)
-	opt.AutoButtonColor = false
-	opt.ZIndex = 50
-	opt.Parent = menu
-	local ip = Instance.new("UIPadding", opt); ip.PaddingLeft = UDim.new(0, 10)
-	opt.MouseEnter:Connect(function() opt.TextColor3 = Color3.fromRGB(235,230,255) end)
-	opt.MouseLeave:Connect(function() opt.TextColor3 = Color3.fromRGB(210,205,230) end)
-	opt.MouseButton1Click:Connect(function() setSelected(text); setMenuOpen(false) end)
+local function halfButton(text, color)
+	local b = Instance.new("TextButton")
+	b.Size = UDim2.new(0.5, -5, 1, 0)
+	b.BackgroundColor3 = color
+	b.AutoButtonColor = false
+	b.Font = Enum.Font.GothamSemibold
+	b.TextSize = 16
+	b.TextColor3 = Color3.new(1,1,1)
+	b.Text = text
+	Instance.new("UICorner", b).CornerRadius = UDim.new(0, 10)
+	return b
 end
 
-ddBtn.MouseButton1Click:Connect(function()
-	setMenuOpen(not menu.Visible or menu.Size.Y.Offset == 0)
-end)
+sectionLabel("Training Points Grinder")
 
-local execBtn = Instance.new("TextButton")
-execBtn.LayoutOrder = 4
-execBtn.Size = UDim2.new(1, 0, 0, 44)
-execBtn.BackgroundColor3 = Color3.fromRGB(120,85,220)
-execBtn.BorderSizePixel = 0
-execBtn.Font = Enum.Font.GothamBold
-execBtn.TextSize = 16
-execBtn.Text = "Execute"
-execBtn.TextColor3 = Color3.new(1,1,1)
-execBtn.AutoButtonColor = false
-execBtn.Parent = content
-Instance.new("UICorner", execBtn).CornerRadius = UDim.new(0, 10)
+local tpRow = Instance.new("Frame")
+tpRow.Size = UDim2.new(1, 0, 0, 44)
+tpRow.BackgroundTransparency = 1
+tpRow.Parent = content
+local tpLay = Instance.new("UIListLayout", tpRow)
+tpLay.FillDirection = Enum.FillDirection.Horizontal
+tpLay.Padding = UDim.new(0, 10)
+
+local enableBtn = halfButton("Enable", PRIMARY)
+enableBtn.Parent = tpRow
+local disableBtn = halfButton("Disable", MUTED)
+disableBtn.TextColor3 = TEXT
+disableBtn.Parent = tpRow
+
+sectionLabel("Instant Finish")
+
+local easyBtn = pillButton("Complete Easy", PRIMARY)
+easyBtn.Parent = content
+local medBtn = pillButton("Complete Medium", PRIMARY)
+medBtn.Parent = content
+local hardBtn = pillButton("Complete Hard", PRIMARY)
+hardBtn.Parent = content
 
 local status = Instance.new("TextLabel")
-status.LayoutOrder = 5
 status.BackgroundTransparency = 1
 status.Size = UDim2.new(1, 0, 0, 20)
 status.Font = Enum.Font.Gotham
 status.TextSize = 14
 status.TextXAlignment = Enum.TextXAlignment.Left
-status.TextColor3 = Color3.fromRGB(220,215,235)
+status.TextColor3 = SUBTEXT
 status.Text = "Status: Ready"
 status.Parent = content
 
-execBtn.MouseButton1Click:Connect(function()
-	if not selected then
-		status.Text = "Status: Please pick a script."
+local C1 = CFrame.new(-464.641602, 254.819977, 293.367981,
+	-0.018149823,  2.06350688e-08,  0.999835253,
+	 2.04697859e-08, 1,            -2.02668851e-08,
+	-0.999835253,  2.00985735e-08, -0.018149823)
+local C2 = CFrame.new(-560.651001, 241.020004, 227.311768, 0,0,-1, 0,1,0, 1,0,0)
+local C3 = CFrame.new(-708.651001, 239.020081, 75.3117676, -1,0,0, 0,1,0, 0,0,-1)
+local C_STOP = CFrame.new(-392.58374, 254.839981, 236.647614)
+
+local FIN_EASY  = CFrame.new(-241, 160.600006,  62)
+local FIN_MED   = CFrame.new(-241, 160.600006, 192)
+local FIN_HARD  = CFrame.new(-241, 160.600006, 322)
+
+local teleporting = false
+local awaiting = false
+local hb
+
+local function getChar()
+	local c = player.Character or player.CharacterAdded:Wait()
+	if not c.PrimaryPart then
+		local hrp = c:FindFirstChild("HumanoidRootPart")
+		if hrp then c.PrimaryPart = hrp end
+	end
+	return c
+end
+
+local function pivot(cf)
+	local c = getChar()
+	if c and c.Parent then c:PivotTo(cf) end
+end
+
+Players.LocalPlayer.CharacterAdded:Connect(function()
+	if teleporting then task.delay(0.1, function() if teleporting then pivot(C2) end end) end
+end)
+
+local function setIdle()
+	enableBtn.BackgroundColor3 = PRIMARY
+	enableBtn.Text = "Enable"
+	disableBtn.BackgroundColor3 = MUTED
+	disableBtn.TextColor3 = TEXT
+end
+local function setConfirm()
+	enableBtn.BackgroundColor3 = PRIMARY_L
+	enableBtn.Text = "Begin?"
+	disableBtn.BackgroundColor3 = MUTED
+end
+local function setRunning()
+	enableBtn.BackgroundColor3 = Color3.fromRGB(70,68,90)
+	enableBtn.Text = "Running..."
+	disableBtn.BackgroundColor3 = PRIMARY
+	disableBtn.TextColor3 = Color3.new(1,1,1)
+end
+
+enableBtn.MouseButton1Click:Connect(function()
+	if teleporting then return end
+	if not awaiting then
+		pivot(C1)
+		awaiting = true
+		status.Text = "Status: Press Enable again to begin"
+		setConfirm()
 		return
 	end
-	status.Text = "Status: Executing " .. selected
-	local ok, err = pcall(function()
-		if selected == "Training Points Grinder" then
-			loadstring(game:HttpGet("https://raw.githubusercontent.com/KingBricked/Taytos-Menu/refs/heads/main/Training%20Points%20Grinder.txt"))()
-		elseif selected == "Instant Finish" then
-			loadstring(game:HttpGet("https://raw.githubusercontent.com/KingBricked/Taytos-Menu/refs/heads/main/Instant%20Finish.txt"))()
-		end
+	awaiting = false
+	teleporting = true
+	setRunning()
+	status.Text = "Status: Running"
+	local toggle = true
+	if hb then hb:Disconnect() end
+	hb = RunService.Heartbeat:Connect(function()
+		if not teleporting then return end
+		pivot(toggle and C2 or C3)
+		toggle = not toggle
 	end)
-	if not ok then
-		status.Text = "Status: Error"
-		warn("Loader failed: ", err)
-	end
 end)
+
+disableBtn.MouseButton1Click:Connect(function()
+	if hb then hb:Disconnect(); hb = nil end
+	teleporting = false
+	awaiting = false
+	setIdle()
+	status.Text = "Status: Stopped"
+	pivot(C_STOP)
+end)
+
+easyBtn.MouseButton1Click:Connect(function() pivot(FIN_EASY) end)
+medBtn.MouseButton1Click:Connect(function() pivot(FIN_MED) end)
+hardBtn.MouseButton1Click:Connect(function() pivot(FIN_HARD) end)
 
 local minimized = false
 local savedSize = window.Size
 minimizeBtn.MouseButton1Click:Connect(function()
-	if menu.Visible then setMenuOpen(false) end
 	minimized = not minimized
 	if minimized then
 		savedSize = window.Size
@@ -284,29 +274,23 @@ minimizeBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
-closeBtn.MouseButton1Click:Connect(function() gui:Destroy() end)
+closeBtn.MouseButton1Click:Connect(function()
+	if hb then hb:Disconnect(); hb = nil end
+	gui:Destroy()
+end)
 
 do
-	local dragging = false
-	local dragStart = Vector2.new()
-	local startPos = UDim2.new()
-	local function update(input)
-		local d = input.Position - dragStart
-		window.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
-	end
+	local dragging, dragStart, startPos = false, Vector2.new(), window.Position
 	titleBar.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			dragging = true
-			dragStart = input.Position
-			startPos = window.Position
-			input.Changed:Connect(function()
-				if input.UserInputState == Enum.UserInputState.End then dragging = false end
-			end)
+			dragging = true; dragStart = input.Position; startPos = window.Position
+			input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
 		end
 	end)
 	titleBar.InputChanged:Connect(function(input)
-		if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) and dragging then
-			update(input)
+		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+			local d = input.Position - dragStart
+			window.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
 		end
 	end)
 end
