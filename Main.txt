@@ -1,0 +1,326 @@
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local OLD = playerGui:FindFirstChild("TaytosScriptLibraryUI")
+if OLD then OLD:Destroy() end
+
+local BASE_W, BASE_H = 420, 420
+local WELCOME_H = 92
+local PAD = 10
+local DROP_ITEM_H, DROP_PAD = 32, 2
+local ANIM_T = 0.16
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "TaytosScriptLibraryUI"
+screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+screenGui.Parent = playerGui
+
+local window = Instance.new("Frame")
+window.Name = "Window"
+window.Size = UDim2.fromOffset(BASE_W, BASE_H)
+window.Position = UDim2.new(0.5, 0, 0.5, 0)
+window.AnchorPoint = Vector2.new(0.5, 0.5)
+window.BackgroundColor3 = Color3.fromRGB(10, 10, 14)
+window.BorderSizePixel = 0
+window.ClipsDescendants = false
+window.ZIndex = 1
+window.Parent = screenGui
+
+local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 16); corner.Parent = window
+local stroke = Instance.new("UIStroke"); stroke.Color = Color3.fromRGB(70, 40, 110); stroke.Thickness = 1.5; stroke.Parent = window
+local gradient = Instance.new("UIGradient")
+gradient.Rotation = 90
+gradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0.00, Color3.fromRGB(12, 12, 16)),
+	ColorSequenceKeypoint.new(0.50, Color3.fromRGB(20, 16, 28)),
+	ColorSequenceKeypoint.new(1.00, Color3.fromRGB(42, 8, 68)),
+})
+gradient.Parent = window
+
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 40)
+titleBar.BackgroundTransparency = 1
+titleBar.ZIndex = 5
+titleBar.Parent = window
+
+local title = Instance.new("TextLabel")
+title.BackgroundTransparency = 1
+title.Size = UDim2.new(1, -140, 1, 0)
+title.Position = UDim2.fromOffset(16, 0)
+title.Font = Enum.Font.GothamSemibold
+title.TextSize = 18
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.TextColor3 = Color3.fromRGB(235, 232, 255)
+title.Text = "Tayto's Script Library"
+title.ZIndex = 5
+title.Parent = titleBar
+
+local btnHolder = Instance.new("Frame")
+btnHolder.BackgroundTransparency = 1
+btnHolder.Size = UDim2.fromOffset(104, 28)
+btnHolder.AnchorPoint = Vector2.new(1, 0.5)
+btnHolder.Position = UDim2.new(1, -10, 0.5, 0)
+btnHolder.ZIndex = 5
+btnHolder.Parent = titleBar
+
+local btnLayout = Instance.new("UIListLayout")
+btnLayout.FillDirection = Enum.FillDirection.Horizontal
+btnLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+btnLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+btnLayout.Padding = UDim.new(0, 8)
+btnLayout.Parent = btnHolder
+
+local function makeIconButton(name, text, order)
+	local b = Instance.new("TextButton")
+	b.Name = name
+	b.LayoutOrder = order
+	b.Text = text
+	b.Size = UDim2.fromOffset(44, 28)
+	b.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+	b.BorderSizePixel = 0
+	b.AutoButtonColor = false
+	b.Font = Enum.Font.GothamSemibold
+	b.TextSize = 14
+	b.TextColor3 = Color3.fromRGB(225, 220, 245)
+	b.ZIndex = 5
+	local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, 8); c.Parent = b
+	local s = Instance.new("UIStroke"); s.Color = Color3.fromRGB(80, 60, 120); s.Thickness = 1; s.Parent = b
+	b.Parent = btnHolder
+	return b
+end
+
+local minimizeBtn = makeIconButton("Minimize", "—", 1)
+local closeBtn    = makeIconButton("Close", "X", 2)
+
+local content = Instance.new("Frame")
+content.Name = "Content"
+content.Size = UDim2.new(1, -24, 1, -64)
+content.Position = UDim2.fromOffset(12, 52)
+content.BackgroundTransparency = 1
+content.ZIndex = 2
+content.Parent = window
+
+local listLayout = Instance.new("UIListLayout")
+listLayout.FillDirection = Enum.FillDirection.Vertical
+listLayout.Padding = UDim.new(0, PAD)
+listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+listLayout.Parent = content
+
+local function makeSectionLabel(text, order)
+	local lbl = Instance.new("TextLabel")
+	lbl.LayoutOrder = order
+	lbl.BackgroundTransparency = 1
+	lbl.Size = UDim2.new(1, 0, 0, 20)
+	lbl.Font = Enum.Font.GothamSemibold
+	lbl.TextSize = 16
+	lbl.TextXAlignment = Enum.TextXAlignment.Left
+	lbl.TextColor3 = Color3.fromRGB(230, 225, 245)
+	lbl.ZIndex = 2
+	lbl.Text = text
+	return lbl
+end
+
+local function makeCard(titleText, bodyText, order)
+	local card = Instance.new("Frame")
+	card.LayoutOrder = order
+	card.BackgroundColor3 = Color3.fromRGB(26, 24, 34)
+	card.BorderSizePixel = 0
+	card.Size = UDim2.new(1, 0, 0, WELCOME_H)
+	card.ZIndex = 2
+	local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, 12); c.Parent = card
+	local s = Instance.new("UIStroke"); s.Color = Color3.fromRGB(75, 55, 110); s.Thickness = 1; s.Parent = card
+	local padIn = Instance.new("UIPadding"); padIn.PaddingTop = UDim.new(0, 12); padIn.PaddingBottom = UDim.new(0, 12); padIn.PaddingLeft = UDim.new(0, 12); padIn.PaddingRight = UDim.new(0, 12); padIn.Parent = card
+	local h = Instance.new("TextLabel"); h.BackgroundTransparency = 1; h.Size = UDim2.new(1, 0, 0, 22); h.Font = Enum.Font.GothamSemibold; h.TextSize = 16; h.TextXAlignment = Enum.TextXAlignment.Left; h.TextColor3 = Color3.fromRGB(240, 235, 255); h.ZIndex = 2; h.Text = titleText; h.Parent = card
+	local p = Instance.new("TextLabel"); p.BackgroundTransparency = 1; p.Position = UDim2.fromOffset(0, 26); p.Size = UDim2.new(1, 0, 1, -30); p.Font = Enum.Font.Gotham; p.TextSize = 14; p.TextWrapped = true; p.TextXAlignment = Enum.TextXAlignment.Left; p.TextYAlignment = Enum.TextYAlignment.Top; p.TextColor3 = Color3.fromRGB(200, 195, 220); p.ZIndex = 2; p.Text = bodyText; p.Parent = card
+	return card
+end
+
+type Dropdown = {
+	frame: Frame,
+	btn: TextButton,
+	optionsFrame: Frame,
+	selected: string?,
+	open: boolean,
+	setOpen: (self:any, v:boolean)->(),
+	setSelected: (self:any, value:string?)->(),
+	clear: (self:any)->(),
+	containsPoint: (self:any, pos: Vector2)->boolean,
+}
+
+local currentOpen: Dropdown? = nil
+local suppressOutside = false
+
+local function createDropdown(placeholder, options, order)
+	local dropdownFrame = Instance.new("Frame")
+	dropdownFrame.LayoutOrder = order
+	dropdownFrame.Size = UDim2.new(1, 0, 0, 44)
+	dropdownFrame.BackgroundColor3 = Color3.fromRGB(28, 26, 38)
+	dropdownFrame.BorderSizePixel = 0
+	dropdownFrame.ClipsDescendants = false
+	dropdownFrame.ZIndex = 20
+	local dCorner = Instance.new("UICorner"); dCorner.CornerRadius = UDim.new(0, 10); dCorner.Parent = dropdownFrame
+	local dStroke = Instance.new("UIStroke"); dStroke.Color = Color3.fromRGB(90, 70, 140); dStroke.Thickness = 1; dStroke.Parent = dropdownFrame
+	local btn = Instance.new("TextButton"); btn.Size = UDim2.new(1, 0, 1, 0); btn.BackgroundTransparency = 1; btn.Text = placeholder .. " ▼"; btn.Font = Enum.Font.GothamSemibold; btn.TextSize = 16; btn.TextXAlignment = Enum.TextXAlignment.Left; btn.TextColor3 = Color3.fromRGB(230, 225, 245); btn.AutoButtonColor = false; btn.ZIndex = 20; btn.Parent = dropdownFrame
+	local padBtn = Instance.new("UIPadding"); padBtn.PaddingLeft = UDim.new(0, 12); padBtn.PaddingRight = UDim.new(0, 12); padBtn.Parent = btn
+	local optionsFrame = Instance.new("Frame"); optionsFrame.Name = "Options"; optionsFrame.Size = UDim2.new(1, 0, 0, 0); optionsFrame.Position = UDim2.new(0, 0, 0, 44); optionsFrame.BackgroundColor3 = Color3.fromRGB(20, 18, 28); optionsFrame.BorderSizePixel = 0; optionsFrame.Visible = false; optionsFrame.ClipsDescendants = true; optionsFrame.ZIndex = 50; optionsFrame.Parent = dropdownFrame
+	local oc = Instance.new("UICorner"); oc.CornerRadius = UDim.new(0, 10); oc.Parent = optionsFrame
+	local oStroke = Instance.new("UIStroke"); oStroke.Color = Color3.fromRGB(100, 80, 160); oStroke.Thickness = 1; oStroke.Parent = optionsFrame
+	local layout = Instance.new("UIListLayout"); layout.FillDirection = Enum.FillDirection.Vertical; layout.Padding = UDim.new(0, DROP_PAD); layout.Parent = optionsFrame
+
+	local dd: any = {frame = dropdownFrame, btn = btn, optionsFrame = optionsFrame, selected = nil, open = false}
+
+	function dd:containsPoint(pos)
+		local fP, fS = self.frame.AbsolutePosition, self.frame.AbsoluteSize
+		local oP, oS = self.optionsFrame.AbsolutePosition, self.optionsFrame.AbsoluteSize
+		local inMain = pos.X>=fP.X and pos.X<=fP.X+fS.X and pos.Y>=fP.Y and pos.Y<=fP.Y+fS.Y
+		local inOpts = pos.X>=oP.X and pos.X<=oP.X+oS.X and pos.Y>=oP.Y and pos.Y<=oP.Y+oS.Y
+		return inMain or (self.open and inOpts)
+	end
+
+	function dd:setSelected(value)
+		self.selected = value
+		if value then self.btn.Text = value .. " ▼" else self.btn.Text = placeholder .. " ▼" end
+	end
+	function dd:clear() self:setSelected(nil) end
+
+	local function menuHeight() return (#options) * (DROP_ITEM_H + DROP_PAD) end
+
+	function dd:setOpen(v)
+		if self.open == v then return end
+		self.open = v
+		if v then
+			if currentOpen and currentOpen ~= self then currentOpen:setOpen(false) end
+			currentOpen = self
+			self.optionsFrame.Visible = true
+			TweenService:Create(self.optionsFrame, TweenInfo.new(ANIM_T, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 0, menuHeight())}):Play()
+			suppressOutside = true; task.defer(function() suppressOutside = false end)
+		else
+			TweenService:Create(self.optionsFrame, TweenInfo.new(ANIM_T, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 0, 0)}):Play()
+			task.delay(ANIM_T, function() self.optionsFrame.Visible = false end)
+			if currentOpen == self then currentOpen = nil end
+		end
+	end
+
+	for _, text in ipairs(options) do
+		local opt = Instance.new("TextButton"); opt.Size = UDim2.new(1, 0, 0, DROP_ITEM_H); opt.BackgroundTransparency = 1; opt.Text = text; opt.Font = Enum.Font.Gotham; opt.TextSize = 14; opt.TextXAlignment = Enum.TextXAlignment.Left; opt.TextColor3 = Color3.fromRGB(205, 200, 220); opt.AutoButtonColor = false; opt.ZIndex = 50; opt.Parent = optionsFrame
+		local ip = Instance.new("UIPadding"); ip.PaddingLeft = UDim.new(0, 10); ip.Parent = opt
+		opt.MouseEnter:Connect(function() opt.TextColor3 = Color3.fromRGB(235, 230, 255) end)
+		opt.MouseLeave:Connect(function() opt.TextColor3 = Color3.fromRGB(205, 200, 220) end)
+		opt.MouseButton1Click:Connect(function() dd:setSelected(text); dd:setOpen(false) end)
+	end
+
+	btn.MouseButton1Click:Connect(function() dd:setOpen(not dd.open) end)
+	return dd
+end
+
+local order = 0; local function nextOrder() order += 1; return order end
+
+makeCard("Welcome!", "Pick a script from one dropdown. Choosing in one will deselect the other. Then press Execute.", nextOrder()).Parent = content
+makeSectionLabel("Tayto's Original Scripts", nextOrder()).Parent = content
+local ddTayto = createDropdown("Select a script", {"Treasure Hunt Simulator","Flood Escape Classic"}, nextOrder()); ddTayto.frame.Parent = content
+makeSectionLabel("Other Creators Scripts", nextOrder()).Parent = content
+local ddOther = createDropdown("Select a script", {"Infinite Yield","Universal Aimbot","Fly Gui V3","Click TP (CTRL+Left Click)"}, nextOrder()); ddOther.frame.Parent = content
+
+local oldSelA = ddTayto.setSelected; ddTayto.setSelected = function(self, v) oldSelA(self, v); if v then ddOther:clear() end end
+local oldSelB = ddOther.setSelected; ddOther.setSelected = function(self, v) oldSelB(self, v); if v then ddTayto:clear() end end
+
+local execBtn = Instance.new("TextButton")
+execBtn.LayoutOrder = nextOrder()
+execBtn.Size = UDim2.new(1, 0, 0, 44)
+execBtn.BackgroundColor3 = Color3.fromRGB(120, 85, 220)
+execBtn.BorderSizePixel = 0
+execBtn.Font = Enum.Font.GothamSemibold
+execBtn.TextSize = 16
+execBtn.Text = "Execute"
+execBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+execBtn.AutoButtonColor = false
+execBtn.ZIndex = 2
+execBtn.Parent = content
+local exCorner = Instance.new("UICorner"); exCorner.CornerRadius = UDim.new(0, 10); exCorner.Parent = execBtn
+
+local status = Instance.new("TextLabel")
+status.LayoutOrder = nextOrder()
+status.BackgroundTransparency = 1
+status.Size = UDim2.new(1, 0, 0, 20)
+status.Font = Enum.Font.Gotham
+status.TextSize = 14
+status.TextXAlignment = Enum.TextXAlignment.Left
+status.TextColor3 = Color3.fromRGB(210, 205, 230)
+status.ZIndex = 2
+status.Text = "Status: Ready"
+status.Parent = content
+
+execBtn.MouseButton1Click:Connect(function()
+	local chosen = ddTayto.selected or ddOther.selected
+	if not chosen then status.Text = "Status: Please pick a script." return end
+	status.Text = "Status: Executing " .. chosen
+	if chosen == "Infinite Yield" then
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+	elseif chosen == "Universal Aimbot" then
+    		loadstring(game:HttpGet("https://raw.githubusercontent.com/Exunys/AirHub/main/AirHub.lua"))()
+	elseif chosen == "Fly Gui V3" then
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/XNEOFF/FlyGuiV3/main/FlyGuiV3.txt"))()
+	elseif chosen == "Click TP (CTRL+Left Click)" then
+		loadstring(game:HttpGet("https://pastebin.com/raw/jhtXgkiS"))()
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(input, gp)
+	if gp or suppressOutside then return end
+	if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then return end
+	local pos = input.Position
+	if currentOpen and not currentOpen:containsPoint(pos) then currentOpen:setOpen(false) end
+end)
+
+local minimized = false
+local savedSize = window.Size
+
+minimizeBtn.MouseButton1Click:Connect(function()
+    minimized = not minimized
+
+    if currentOpen then
+        currentOpen:setOpen(false)
+    end
+
+    if minimized then
+        savedSize = window.Size
+        TweenService:Create(window, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {Size = UDim2.fromOffset(BASE_W, 56)}):Play()
+        content.Visible = false
+    else
+        TweenService:Create(window, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {Size = savedSize}):Play()
+        task.delay(0.18, function()
+            content.Visible = true
+        end)
+    end
+end)
+
+closeBtn.MouseButton1Click:Connect(function() screenGui:Destroy() end)
+
+do
+	local dragging = false
+	local dragStart = Vector2.new()
+	local startPos = UDim2.new()
+	titleBar.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true; dragStart = input.Position; startPos = window.Position
+			input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
+		end
+	end)
+	titleBar.InputChanged:Connect(function(input)
+		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+			local d = input.Position - dragStart
+			window.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
+		end
+	end)
+end
+
+window.Size = UDim2.fromOffset(BASE_W, 0)
+TweenService:Create(window, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+	{Size = UDim2.fromOffset(BASE_W, BASE_H)}):Play()
