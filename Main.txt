@@ -94,8 +94,8 @@ local function makeIconButton(name, text, order)
 	return b
 end
 
-local minimizeBtn = makeIconButton("Minimize", "—", 1)
-local closeBtn    = makeIconButton("Close", "X", 2)
+local closeBtn    = makeIconButton("Close", "X", 1)
+local minimizeBtn = makeIconButton("Minimize", "—", 2)
 
 local content = Instance.new("Frame")
 content.Name = "Content"
@@ -140,7 +140,19 @@ local function makeCard(titleText, bodyText, order)
 	return card
 end
 
-local currentOpen = nil
+type Dropdown = {
+	frame: Frame,
+	btn: TextButton,
+	optionsFrame: Frame,
+	selected: string?,
+	open: boolean,
+	setOpen: (self:any, v:boolean)->(),
+	setSelected: (self:any, value:string?)->(),
+	clear: (self:any)->(),
+	containsPoint: (self:any, pos: Vector2)->boolean,
+}
+
+local currentOpen: Dropdown? = nil
 local suppressOutside = false
 
 local function createDropdown(placeholder, options, order)
@@ -160,7 +172,7 @@ local function createDropdown(placeholder, options, order)
 	local oStroke = Instance.new("UIStroke"); oStroke.Color = Color3.fromRGB(100, 80, 160); oStroke.Thickness = 1; oStroke.Parent = optionsFrame
 	local layout = Instance.new("UIListLayout"); layout.FillDirection = Enum.FillDirection.Vertical; layout.Padding = UDim.new(0, DROP_PAD); layout.Parent = optionsFrame
 
-	local dd = {frame = dropdownFrame, btn = btn, optionsFrame = optionsFrame, selected = nil, open = false}
+	local dd: any = {frame = dropdownFrame, btn = btn, optionsFrame = optionsFrame, selected = nil, open = false}
 
 	function dd:containsPoint(pos)
 		local fP, fS = self.frame.AbsolutePosition, self.frame.AbsoluteSize
@@ -212,7 +224,7 @@ makeCard("Welcome!", "Pick a script from one dropdown. Choosing in one will dese
 makeSectionLabel("Tayto's Original Scripts", nextOrder()).Parent = content
 local ddTayto = createDropdown("Select a script", {"Treasure Hunt Simulator (Unavailable)","Flood Escape Classic"}, nextOrder()); ddTayto.frame.Parent = content
 makeSectionLabel("Other Creators Scripts", nextOrder()).Parent = content
-local ddOther = createDropdown("Select a script", {"Infinite Yield","Universal Aimbot","Fly Gui V3","Click TP (CTRL+Left Click)"}, nextOrder()); ddOther.frame.Parent = content
+local ddOther = createDropdown("Select a script", {"Infinite Yield","Universal Aimbot","Fly Gui V3","Click TP (CTRL+Left Click)","Anti Afk Kick"}, nextOrder()); ddOther.frame.Parent = content
 
 local oldSelA = ddTayto.setSelected; ddTayto.setSelected = function(self, v) oldSelA(self, v); if v then ddOther:clear() end end
 local oldSelB = ddOther.setSelected; ddOther.setSelected = function(self, v) oldSelB(self, v); if v then ddTayto:clear() end end
@@ -247,9 +259,7 @@ execBtn.MouseButton1Click:Connect(function()
 	local chosen = ddTayto.selected or ddOther.selected
 	if not chosen then status.Text = "Status: Please pick a script." return end
 	status.Text = "Status: Executing " .. chosen
-	if chosen == "Flood Escape Classic" then
-		loadstring(game:HttpGet("https://raw.githubusercontent.com/TaytoGit/TMV2/refs/heads/main/Flood%20Escape%20Classic%20Menu.txt"))()
-	elseif chosen == "Infinite Yield" then
+	if chosen == "Infinite Yield" then
 		loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
 	elseif chosen == "Universal Aimbot" then
 		loadstring(game:HttpGet("https://raw.githubusercontent.com/Exunys/AirHub/main/AirHub.lua"))()
@@ -257,8 +267,10 @@ execBtn.MouseButton1Click:Connect(function()
 		loadstring(game:HttpGet("https://raw.githubusercontent.com/XNEOFF/FlyGuiV3/main/FlyGuiV3.txt"))()
 	elseif chosen == "Click TP (CTRL+Left Click)" then
 		loadstring(game:HttpGet("https://pastebin.com/raw/jhtXgkiS"))()
-	elseif chosen == "Treasure Hunt Simulator (Unavailable)" then
-		status.Text = "Status: THS is currently unavailable."
+	elseif chosen == "Anti Afk Kick" then
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/hassanxzayn-lua/Anti-afk/main/antiafkbyhassanxzyn"))()
+	elseif chosen == "Flood Escape Classic" then
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/TaytoGit/TMV2/refs/heads/main/Flood%20Escape%20Classic%20Menu.txt"))()
 	end
 end)
 
@@ -271,19 +283,22 @@ end)
 
 local minimized = false
 local savedSize = window.Size
+
 minimizeBtn.MouseButton1Click:Connect(function()
-	minimized = not minimized
-	if currentOpen then currentOpen:setOpen(false) end
-	if minimized then
-		savedSize = window.Size
-		TweenService:Create(window, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-			{Size = UDim2.fromOffset(BASE_W, 56)}):Play()
-		content.Visible = false
-	else
-		TweenService:Create(window, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-			{Size = savedSize}):Play()
-		task.delay(0.18, function() content.Visible = true end)
-	end
+    minimized = not minimized
+    if currentOpen then currentOpen:setOpen(false) end
+    if minimized then
+        savedSize = window.Size
+        TweenService:Create(window, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {Size = UDim2.fromOffset(BASE_W, 56)}):Play()
+        content.Visible = false
+    else
+        TweenService:Create(window, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {Size = savedSize}):Play()
+        task.delay(0.18, function()
+            content.Visible = true
+        end)
+    end
 end)
 
 closeBtn.MouseButton1Click:Connect(function() screenGui:Destroy() end)
