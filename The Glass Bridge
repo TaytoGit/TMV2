@@ -1,0 +1,81 @@
+for _, step in pairs(workspace:GetChildren()) do
+    if step:IsA("Model") and step.Name == "Step" then
+        local glass_tempered = step:FindFirstChild("glass_tempered")
+        if glass_tempered then
+            local glass_panel = glass_tempered:FindFirstChild("glass_panel")
+            if glass_panel and glass_panel:IsA("BasePart") then
+                glass_panel.Color = Color3.fromRGB(0, 255, 0)
+            end
+        end
+
+        local glass_weak = step:FindFirstChild("glass_weak")
+        if glass_weak then
+            local glass_panel_weak = glass_weak:FindFirstChild("glass_panel_weak")
+            if glass_panel_weak and glass_panel_weak:IsA("BasePart") then
+                glass_panel_weak.Color = Color3.fromRGB(255, 0, 0)
+                local clone = glass_panel_weak:Clone()
+                clone.Name = "stepable"
+                clone.Parent = glass_weak
+            end
+
+            local detector = glass_weak:FindFirstChild("Detector")
+            if detector then
+                detector:Destroy()
+            end
+        end
+    end
+end
+
+local function isLobby(inst)
+    return typeof(inst.Name) == "string" and inst.Name:lower() == "lobby"
+end
+
+local function purgeLobby(inst)
+    if inst and inst.Parent then
+        inst:Destroy()
+    end
+end
+
+local function purgeAllLobbies()
+    for _, inst in ipairs(workspace:GetDescendants()) do
+        if isLobby(inst) then
+            purgeLobby(inst)
+        end
+    end
+end
+
+purgeAllLobbies()
+
+workspace.ChildAdded:Connect(function(child)
+    if isLobby(child) then
+        purgeLobby(child)
+    end
+end)
+
+workspace.DescendantAdded:Connect(function(desc)
+    if isLobby(desc) then
+        purgeLobby(desc)
+        return
+    end
+    local p = desc.Parent
+    while p do
+        if isLobby(p) then
+            purgeLobby(p)
+            break
+        end
+        p = p.Parent
+    end
+end)
+
+local existing = workspace:FindFirstChild("OOOOOOOOOOOKKK")
+if existing then
+    existing:Destroy()
+end
+
+local p = Instance.new("Part")
+p.Name = "OOOOOOOOOOOKKK"
+p.Anchored = true
+p.Size = Vector3.new(350, 2, 400)
+p.CFrame = CFrame.new(-116.751099, 47.6960335, 88.6486359)
+p.Transparency = 0.75
+p.Parent = workspace
