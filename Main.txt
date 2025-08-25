@@ -13,6 +13,7 @@ local WELCOME_H = 92
 local PAD = 10
 local DROP_ITEM_H, DROP_PAD = 32, 2
 local ANIM_T = 0.16
+local MAX_MENU_H = 170
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "TaytosScriptLibraryUI"
@@ -143,7 +144,7 @@ end
 type Dropdown = {
 	frame: Frame,
 	btn: TextButton,
-	optionsFrame: Frame,
+	optionsFrame: ScrollingFrame,
 	selected: string?,
 	open: boolean,
 	setOpen: (self:any, v:boolean)->(),
@@ -167,7 +168,24 @@ local function createDropdown(placeholder, options, order)
 	local dStroke = Instance.new("UIStroke"); dStroke.Color = Color3.fromRGB(90, 70, 140); dStroke.Thickness = 1; dStroke.Parent = dropdownFrame
 	local btn = Instance.new("TextButton"); btn.Size = UDim2.new(1, 0, 1, 0); btn.BackgroundTransparency = 1; btn.Text = placeholder .. " ▼"; btn.Font = Enum.Font.GothamSemibold; btn.TextSize = 16; btn.TextXAlignment = Enum.TextXAlignment.Left; btn.TextColor3 = Color3.fromRGB(230, 225, 245); btn.AutoButtonColor = false; btn.ZIndex = 20; btn.Parent = dropdownFrame
 	local padBtn = Instance.new("UIPadding"); padBtn.PaddingLeft = UDim.new(0, 12); padBtn.PaddingRight = UDim.new(0, 12); padBtn.Parent = btn
-	local optionsFrame = Instance.new("Frame"); optionsFrame.Name = "Options"; optionsFrame.Size = UDim2.new(1, 0, 0, 0); optionsFrame.Position = UDim2.new(0, 0, 0, 44); optionsFrame.BackgroundColor3 = Color3.fromRGB(20, 18, 28); optionsFrame.BorderSizePixel = 0; optionsFrame.Visible = false; optionsFrame.ClipsDescendants = true; optionsFrame.ZIndex = 50; optionsFrame.Parent = dropdownFrame
+
+	local optionsFrame = Instance.new("ScrollingFrame")
+	optionsFrame.Name = "Options"
+	optionsFrame.Size = UDim2.new(1, 0, 0, 0)
+	optionsFrame.Position = UDim2.new(0, 0, 0, 44)
+	optionsFrame.BackgroundColor3 = Color3.fromRGB(20, 18, 28)
+	optionsFrame.BorderSizePixel = 0
+	optionsFrame.Visible = false
+	optionsFrame.ClipsDescendants = true
+	optionsFrame.ZIndex = 50
+	optionsFrame.ScrollBarThickness = 5
+	optionsFrame.VerticalScrollBarInset = Enum.ScrollBarInset.Always
+	optionsFrame.ScrollBarImageTransparency = 0
+	optionsFrame.ScrollBarImageColor3 = Color3.fromRGB(120, 100, 170)
+	optionsFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	optionsFrame.CanvasSize = UDim2.new(0,0,0,0)
+	optionsFrame.Parent = dropdownFrame
+
 	local oc = Instance.new("UICorner"); oc.CornerRadius = UDim.new(0, 10); oc.Parent = optionsFrame
 	local oStroke = Instance.new("UIStroke"); oStroke.Color = Color3.fromRGB(100, 80, 160); oStroke.Thickness = 1; oStroke.Parent = optionsFrame
 	local layout = Instance.new("UIListLayout"); layout.FillDirection = Enum.FillDirection.Vertical; layout.Padding = UDim.new(0, DROP_PAD); layout.Parent = optionsFrame
@@ -197,7 +215,9 @@ local function createDropdown(placeholder, options, order)
 			if currentOpen and currentOpen ~= self then currentOpen:setOpen(false) end
 			currentOpen = self
 			self.optionsFrame.Visible = true
-			TweenService:Create(self.optionsFrame, TweenInfo.new(ANIM_T, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 0, menuHeight())}):Play()
+			self.optionsFrame.CanvasSize = UDim2.new(0,0,0, menuHeight())
+			local targetH = math.min(menuHeight(), MAX_MENU_H)
+			TweenService:Create(self.optionsFrame, TweenInfo.new(ANIM_T, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 0, targetH)}):Play()
 			suppressOutside = true; task.defer(function() suppressOutside = false end)
 		else
 			TweenService:Create(self.optionsFrame, TweenInfo.new(ANIM_T, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 0, 0)}):Play()
@@ -272,7 +292,7 @@ execBtn.MouseButton1Click:Connect(function()
 	elseif chosen == "Flood Escape: Classic" then
 		loadstring(game:HttpGet("https://raw.githubusercontent.com/TaytoGit/TMV2/refs/heads/main/Flood%20Escape%20Classic%20Menu.txt"))()
 	elseif chosen == "FE Invisible" then
-		loadstring(game:HttpGet('https://pastebin.com/raw/3Rnd9rHf'))()
+		loadstring(game:HttpGet("https://pastebin.com/raw/3Rnd9rHf"))()
 	end
 end)
 
@@ -326,5 +346,3 @@ end
 window.Size = UDim2.fromOffset(BASE_W, 0)
 TweenService:Create(window, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
 	{Size = UDim2.fromOffset(BASE_W, BASE_H)}):Play()
-
-
