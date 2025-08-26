@@ -21,7 +21,22 @@ local gui = Instance.new("ScreenGui")
 gui.Name = "FloodEscapeClassicUI"
 gui.ResetOnSpawn = false
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+gui.DisplayOrder = 999999 -- always on top
 gui.Parent = playerGui
+
+-- Force every current & future GUI object in this ScreenGui to max ZIndex
+local function enforceMaxZIndex(root)
+	local function apply(inst)
+		if inst:IsA("GuiObject") then
+			inst.ZIndex = 999999
+		end
+	end
+	for _, d in ipairs(root:GetDescendants()) do
+		apply(d)
+	end
+	root.DescendantAdded:Connect(apply)
+end
+enforceMaxZIndex(gui)
 
 local window = Instance.new("Frame")
 window.Size = UDim2.fromOffset(BASE_W, BASE_H)
