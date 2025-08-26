@@ -1,81 +1,306 @@
-for _, step in pairs(workspace:GetChildren()) do
-    if step:IsA("Model") and step.Name == "Step" then
-        local glass_tempered = step:FindFirstChild("glass_tempered")
-        if glass_tempered then
-            local glass_panel = glass_tempered:FindFirstChild("glass_panel")
-            if glass_panel and glass_panel:IsA("BasePart") then
-                glass_panel.Color = Color3.fromRGB(0, 255, 0)
-            end
-        end
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
 
-        local glass_weak = step:FindFirstChild("glass_weak")
-        if glass_weak then
-            local glass_panel_weak = glass_weak:FindFirstChild("glass_panel_weak")
-            if glass_panel_weak and glass_panel_weak:IsA("BasePart") then
-                glass_panel_weak.Color = Color3.fromRGB(255, 0, 0)
-                local clone = glass_panel_weak:Clone()
-                clone.Name = "stepable"
-                clone.Parent = glass_weak
-            end
+local player = Players.LocalPlayer
+local pg = player:WaitForChild("PlayerGui")
 
-            local detector = glass_weak:FindFirstChild("Detector")
-            if detector then
-                detector:Destroy()
-            end
-        end
-    end
+local old = pg:FindFirstChild("TaytosGlassMenuUI")
+if old then old:Destroy() end
+
+local BASE_W, BASE_H = 420, 250
+local BG = Color3.fromRGB(10,10,14)
+local STROKE = Color3.fromRGB(70,40,110)
+local PRIMARY = Color3.fromRGB(120,85,220)
+local MUTED = Color3.fromRGB(46,44,58)
+local TEXT = Color3.fromRGB(235,232,255)
+local SUBTEXT = Color3.fromRGB(210,205,230)
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "TaytosGlassMenuUI"
+gui.ResetOnSpawn = false
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+gui.DisplayOrder = 999999
+gui.IgnoreGuiInset = true
+gui.Parent = pg
+
+local win = Instance.new("Frame")
+win.Size = UDim2.fromOffset(BASE_W, BASE_H)
+win.Position = UDim2.new(0.5,0,0.5,0)
+win.AnchorPoint = Vector2.new(0.5,0.5)
+win.BackgroundColor3 = BG
+win.BorderSizePixel = 0
+win.Parent = gui
+Instance.new("UICorner", win).CornerRadius = UDim.new(0,16)
+local wst = Instance.new("UIStroke", win); wst.Color = STROKE; wst.Thickness = 1.5
+local wgr = Instance.new("UIGradient", win); wgr.Rotation = 90
+wgr.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(12,12,16)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(20,16,28)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(42,8,68)),
+}
+
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1,0,0,40)
+titleBar.BackgroundTransparency = 1
+titleBar.Parent = win
+
+local title = Instance.new("TextLabel")
+title.BackgroundTransparency = 1
+title.Size = UDim2.new(1,-120,1,0)
+title.Position = UDim2.fromOffset(16,0)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 18
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.TextColor3 = TEXT
+title.Text = "Tayto's Glass Bridge Menu"
+title.Parent = titleBar
+
+local btnHolder = Instance.new("Frame")
+btnHolder.BackgroundTransparency = 1
+btnHolder.Size = UDim2.fromOffset(96,28)
+btnHolder.AnchorPoint = Vector2.new(1,0.5)
+btnHolder.Position = UDim2.new(1,-10,0.5,0)
+btnHolder.Parent = titleBar
+local bl = Instance.new("UIListLayout", btnHolder)
+bl.FillDirection = Enum.FillDirection.Horizontal
+bl.Padding = UDim.new(0,8)
+bl.HorizontalAlignment = Enum.HorizontalAlignment.Right
+bl.VerticalAlignment = Enum.VerticalAlignment.Center
+
+local function icon(txt)
+	local b = Instance.new("TextButton")
+	b.Size = UDim2.fromOffset(44,28)
+	b.Text = txt
+	b.BackgroundColor3 = Color3.fromRGB(30,30,40)
+	b.AutoButtonColor = false
+	b.Font = Enum.Font.GothamSemibold
+	b.TextSize = 14
+	b.TextColor3 = TEXT
+	Instance.new("UICorner", b).CornerRadius = UDim.new(0,8)
+	local s = Instance.new("UIStroke", b); s.Color = Color3.fromRGB(80,60,120); s.Thickness = 1
+	b.Parent = btnHolder
+	return b
 end
 
-local function isLobby(inst)
-    return typeof(inst.Name) == "string" and inst.Name:lower() == "lobby"
+local closeBtn = icon("X")
+local minBtn = icon("—")
+
+local content = Instance.new("Frame")
+content.Size = UDim2.new(1,-24,1,-64)
+content.Position = UDim2.fromOffset(12,52)
+content.BackgroundTransparency = 1
+content.Parent = win
+
+local lay = Instance.new("UIListLayout", content)
+lay.Padding = UDim.new(0,10)
+lay.SortOrder = Enum.SortOrder.LayoutOrder
+
+local function label(txt)
+	local l = Instance.new("TextLabel")
+	l.Size = UDim2.new(1,0,0,20)
+	l.BackgroundTransparency = 1
+	l.Font = Enum.Font.GothamBold
+	l.TextSize = 16
+	l.TextXAlignment = Enum.TextXAlignment.Left
+	l.TextColor3 = TEXT
+	l.Text = txt
+	l.Parent = content
+	return l
 end
 
-local function purgeLobby(inst)
-    if inst and inst.Parent then
-        inst:Destroy()
-    end
+local function pill(txt, color)
+	local b = Instance.new("TextButton")
+	b.Size = UDim2.new(1,0,0,44)
+	b.BackgroundColor3 = color
+	b.AutoButtonColor = false
+	b.Font = Enum.Font.GothamSemibold
+	b.TextSize = 16
+	b.TextColor3 = Color3.new(1,1,1)
+	b.Text = txt
+	Instance.new("UICorner", b).CornerRadius = UDim.new(0,10)
+	return b
 end
 
-local function purgeAllLobbies()
-    for _, inst in ipairs(workspace:GetDescendants()) do
-        if isLobby(inst) then
-            purgeLobby(inst)
-        end
-    end
+local function halfRow()
+	local f = Instance.new("Frame")
+	f.Size = UDim2.new(1,0,0,44)
+	f.BackgroundTransparency = 1
+	f.Parent = content
+	local hl = Instance.new("UIListLayout", f)
+	hl.FillDirection = Enum.FillDirection.Horizontal
+	hl.Padding = UDim.new(0,10)
+	return f
 end
 
-purgeAllLobbies()
+label("Reveal Glass Panels")
+local execBtn = pill("Execute", PRIMARY); execBtn.Parent = content
 
-workspace.ChildAdded:Connect(function(child)
-    if isLobby(child) then
-        purgeLobby(child)
-    end
+label("Auto Win")
+local row = halfRow()
+local enableBtn = pill("Enable", PRIMARY); enableBtn.Size = UDim2.new(0.5,-5,1,0); enableBtn.Parent = row
+local disableBtn = pill("Disabled", MUTED); disableBtn.TextColor3 = TEXT; disableBtn.Size = UDim2.new(0.5,-5,1,0); disableBtn.Parent = row
+
+local status = Instance.new("TextLabel")
+status.BackgroundTransparency = 1
+status.Size = UDim2.new(1,0,0,20)
+status.Font = Enum.Font.Gotham
+status.TextSize = 14
+status.TextXAlignment = Enum.TextXAlignment.Left
+status.TextColor3 = SUBTEXT
+status.Text = "Status: Ready"
+status.Parent = content
+
+execBtn.MouseButton1Click:Connect(function()
+	status.Text = "Status: Revealing..."
+	for _, step in pairs(workspace:GetChildren()) do 
+		if step:IsA("Model") and step.Name == "Step" then
+			local glass_tempered = step:FindFirstChild("glass_tempered")
+			if glass_tempered then
+				local glass_panel = glass_tempered:FindFirstChild("glass_panel")
+				if glass_panel and glass_panel:IsA("BasePart") then
+					glass_panel.Color = Color3.fromRGB(0, 255, 0)
+				end
+			end
+			local glass_weak = step:FindFirstChild("glass_weak")
+			if glass_weak then
+				local glass_panel_weak = glass_weak:FindFirstChild("glass_panel_weak")
+				if glass_panel_weak and glass_panel_weak:IsA("BasePart") then
+					glass_panel_weak.Color = Color3.fromRGB(255, 0, 0)
+					local clone = glass_panel_weak:Clone()
+					clone.Name = "stepable"
+					clone.Parent = glass_weak
+				end
+				local detector = glass_weak:FindFirstChild("Detector")
+				if detector then
+					detector:Destroy()
+				end
+			end
+		end
+	end
+	local function isLobby(inst) return typeof(inst.Name) == "string" and inst.Name:lower() == "lobby" end
+	local function purgeLobby(inst) if inst and inst.Parent then inst:Destroy() end end
+	local function purgeAllLobbies()
+		for _, inst in ipairs(workspace:GetDescendants()) do
+			if isLobby(inst) then purgeLobby(inst) end
+		end
+	end
+	purgeAllLobbies()
+	workspace.ChildAdded:Connect(function(child) if isLobby(child) then purgeLobby(child) end end)
+	workspace.DescendantAdded:Connect(function(desc)
+		if isLobby(desc) then purgeLobby(desc) return end
+		local p = desc.Parent
+		while p do
+			if isLobby(p) then purgeLobby(p) break end
+			p = p.Parent
+		end
+	end)
+	local existing = workspace:FindFirstChild("OOOOOOOOOOOKKK")
+	if existing then existing:Destroy() end
+	local p = Instance.new("Part")
+	p.Name = "OOOOOOOOOOOKKK"
+	p.Anchored = true
+	p.Size = Vector3.new(350, 2, 400)
+	p.CFrame = CFrame.new(-116.751099, 47.6960335, 88.6486359)
+	p.Transparency = 0.75
+	p.Parent = workspace
+	status.Text = "Status: Reveal complete"
 end)
 
-workspace.DescendantAdded:Connect(function(desc)
-    if isLobby(desc) then
-        purgeLobby(desc)
-        return
-    end
-    local p = desc.Parent
-    while p do
-        if isLobby(p) then
-            purgeLobby(p)
-            break
-        end
-        p = p.Parent
-    end
-end)
+local enabled = false
+local running = false
+local winPart = nil
+local targetCFrame = CFrame.new(-16.8024502, 57.4340744, -45.530674, 0,1,0, 1,0,0, 0,0,-1)
 
-local existing = workspace:FindFirstChild("OOOOOOOOOOOKKK")
-if existing then
-    existing:Destroy()
+local function setEnabledUI()
+	enableBtn.Text = "Enabled"
+	enableBtn.BackgroundColor3 = Color3.fromRGB(70,68,90)
+	disableBtn.Text = "Disable"
+	disableBtn.BackgroundColor3 = PRIMARY
+	disableBtn.TextColor3 = Color3.new(1,1,1)
 end
 
-local p = Instance.new("Part")
-p.Name = "OOOOOOOOOOOKKK"
-p.Anchored = true
-p.Size = Vector3.new(350, 2, 400)
-p.CFrame = CFrame.new(-116.751099, 47.6960335, 88.6486359)
-p.Transparency = 0.75
-p.Parent = workspace
+local function setDisabledUI()
+	enableBtn.Text = "Enable"
+	enableBtn.BackgroundColor3 = PRIMARY
+	disableBtn.Text = "Disabled"
+	disableBtn.BackgroundColor3 = MUTED
+	disableBtn.TextColor3 = TEXT
+end
+
+local function loop()
+	if running then return end
+	running = true
+	while enabled do
+		if not winPart then
+			winPart = workspace:FindFirstChild("WinPart") or workspace:WaitForChild("WinPart", 5)
+			if not winPart then
+				status.Text = "Status: WinPart not found"
+				enabled = false
+				break
+			end
+		end
+		local char = player.Character
+		local hrp = char and char:FindFirstChild("HumanoidRootPart")
+		if hrp and winPart then
+			winPart.Anchored = true
+			winPart.CFrame = CFrame.new(hrp.Position)
+			task.wait(0.25)
+			winPart.CFrame = targetCFrame
+		end
+		task.wait(1)
+	end
+	running = false
+end
+
+enableBtn.MouseButton1Click:Connect(function()
+	if enabled then return end
+	enabled = true
+	setEnabledUI()
+	status.Text = "Status: Auto Win enabled"
+	loop()
+end)
+
+disableBtn.MouseButton1Click:Connect(function()
+	if not enabled then return end
+	enabled = false
+	if winPart then winPart.CFrame = targetCFrame end
+	setDisabledUI()
+	status.Text = "Status: Auto Win disabled"
+end)
+
+setDisabledUI()
+
+local minimized, saved = false, win.Size
+minBtn.MouseButton1Click:Connect(function()
+	minimized = not minimized
+	if minimized then
+		saved = win.Size
+		TweenService:Create(win, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromOffset(BASE_W,56)}):Play()
+		content.Visible = false
+	else
+		TweenService:Create(win, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = saved}):Play()
+		task.delay(0.18, function() content.Visible = true end)
+	end
+end)
+
+closeBtn.MouseButton1Click:Connect(function() gui:Destroy() end)
+
+do
+	local drag = false
+	local startPos, startMouse
+	titleBar.InputBegan:Connect(function(i)
+		if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+			drag = true; startMouse = i.Position; startPos = win.Position
+			i.Changed:Connect(function() if i.UserInputState == Enum.UserInputState.End then drag = false end end)
+		end
+	end)
+	titleBar.InputChanged:Connect(function(i)
+		if drag and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+			local d = i.Position - startMouse
+			win.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
+		end
+	end)
+end
+
+win.Size = UDim2.fromOffset(BASE_W, 0)
+TweenService:Create(win, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromOffset(BASE_W, BASE_H)}):Play()
