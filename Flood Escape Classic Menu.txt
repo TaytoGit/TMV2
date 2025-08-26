@@ -1,3 +1,5 @@
+--CREDIT IS APPRECIATED :)
+
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
@@ -452,3 +454,4 @@ end
 
 window.Size = UDim2.fromOffset(BASE_W, 0)
 TweenService:Create(window, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromOffset(BASE_W, BASE_H)}):Play()
+
