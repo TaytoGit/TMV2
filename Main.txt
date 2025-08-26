@@ -244,7 +244,7 @@ local order = 0; local function nextOrder() order += 1; return order end
 
 makeCard("Welcome!", "Pick a script from one dropdown. Choosing in one will deselect the other. Then press Execute.", nextOrder()).Parent = content
 makeSectionLabel("Tayto's Original Scripts", nextOrder()).Parent = content
-local ddTayto = createDropdown("Select a script", {"Treasure Hunt Simulator (Unavailable)","Flood Escape: Classic","The Glass Bridge (NO UI)"}, nextOrder()); ddTayto.frame.Parent = content
+local ddTayto = createDropdown("Select a script", {"Treasure Hunt Simulator (Unavailable)","Flood Escape: Classic","The Glass Bridge"}, nextOrder()); ddTayto.frame.Parent = content
 makeSectionLabel("Other Creators Scripts", nextOrder()).Parent = content
 local ddOther = createDropdown("Select a script", {"Infinite Yield","Universal Aimbot","Fly Gui V3","Click TP (CTRL+Left Click)","Anti Afk Kick","FE Invisible"}, nextOrder()); ddOther.frame.Parent = content
 
@@ -295,7 +295,7 @@ execBtn.MouseButton1Click:Connect(function()
 		loadstring(game:HttpGet("https://raw.githubusercontent.com/TaytoGit/TMV2/refs/heads/main/Flood%20Escape%20Classic%20Menu.txt"))()
 	elseif chosen == "FE Invisible" then
 		loadstring(game:HttpGet("https://pastebin.com/raw/3Rnd9rHf"))()
-	elseif chosen == "The Glass Bridge (NO UI)" then
+	elseif chosen == "The Glass Bridge" then
 		loadstring(game:HttpGet("https://raw.githubusercontent.com/TaytoGit/TMV2/refs/heads/main/The%20Glass%20Bridge"))()
 	end
 end)
@@ -350,4 +350,5 @@ end
 window.Size = UDim2.fromOffset(BASE_W, 0)
 TweenService:Create(window, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
 	{Size = UDim2.fromOffset(BASE_W, BASE_H)}):Play()
+
 
