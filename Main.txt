@@ -1,3 +1,6 @@
+--ALL SOURCE CODE IS FREE TO USE BUT PLEASE CREDIT ME IF YOU ARE MAKING A SIMILAR UI :)
+--I WILL UPDATE THIS SCRIPT OFTEN ISH
+
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -350,5 +353,6 @@ end
 window.Size = UDim2.fromOffset(BASE_W, 0)
 TweenService:Create(window, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
 	{Size = UDim2.fromOffset(BASE_W, BASE_H)}):Play()
+
 
 
