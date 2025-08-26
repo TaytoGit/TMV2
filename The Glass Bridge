@@ -168,9 +168,40 @@ execBtn.MouseButton1Click:Connect(function()
 				local glass_panel_weak = glass_weak:FindFirstChild("glass_panel_weak")
 				if glass_panel_weak and glass_panel_weak:IsA("BasePart") then
 					glass_panel_weak.Color = Color3.fromRGB(255, 0, 0)
+					local oldStepable = glass_weak:FindFirstChild("stepable")
+					if oldStepable then
+						oldStepable:Destroy()
+					end
 					local clone = glass_panel_weak:Clone()
 					clone.Name = "stepable"
+					clone.CanCollide = true
+					clone.Anchored = true
 					clone.Parent = glass_weak
+					local parentStep = step
+					local function solidify()
+						if not (parentStep and parentStep.Parent) then return end
+						if not clone or not clone.Parent then return end
+						clone.Color = Color3.fromRGB(0,0,0)
+						clone.Transparency = 0
+						clone.Material = Enum.Material.SmoothPlastic
+						clone.CanCollide = true
+						clone.Anchored = true
+						clone.Parent = parentStep
+					end
+					glass_panel_weak:GetPropertyChangedSignal("Parent"):Connect(function()
+						if glass_panel_weak.Parent == nil then
+							solidify()
+						end
+					end)
+					if glass_weak.Destroying then
+						glass_weak.Destroying:Connect(solidify)
+					else
+						glass_weak:GetPropertyChangedSignal("Parent"):Connect(function()
+							if glass_weak.Parent == nil then
+								solidify()
+							end
+						end)
+					end
 				end
 				local detector = glass_weak:FindFirstChild("Detector")
 				if detector then
