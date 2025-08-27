@@ -2,6 +2,7 @@
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 local pg = player:WaitForChild("PlayerGui")
@@ -9,7 +10,42 @@ local pg = player:WaitForChild("PlayerGui")
 local old = pg:FindFirstChild("TaytosGlassMenuUI")
 if old then old:Destroy() end
 
-local BASE_W, BASE_H = 420, 330
+local function hookWeakPanel(panel)
+	if not panel or not panel:IsA("BasePart") or panel:GetAttribute("__hooked") then return end
+	panel:SetAttribute("__hooked", true)
+	local gw = panel.Parent
+	local step = panel:FindFirstAncestor("Step")
+	if not step or not gw then return end
+	step.DescendantRemoving:Connect(function(inst)
+		if inst == panel and gw and gw.Parent then
+			local stepable = gw:FindFirstChild("stepable")
+			if stepable and stepable:IsA("BasePart") then
+				stepable.Color = Color3.fromRGB(0, 0, 0)
+				stepable.Material = Enum.Material.SmoothPlastic
+				stepable.Anchored = true
+				stepable.CanCollide = true
+				stepable.Transparency = 0
+				stepable.CFrame = panel.CFrame
+			end
+		end
+	end)
+end
+
+local function scanAndHookWeakPanels(root)
+	for _, d in ipairs((root or workspace):GetDescendants()) do
+		if d:IsA("BasePart") and d.Name == "glass_panel_weak" then
+			hookWeakPanel(d)
+		end
+	end
+end
+
+workspace.DescendantAdded:Connect(function(d)
+	if d:IsA("BasePart") and d.Name == "glass_panel_weak" then
+		hookWeakPanel(d)
+	end
+end)
+
+local BASE_W, BASE_H = 420, 420
 local BG = Color3.fromRGB(10,10,14)
 local STROKE = Color3.fromRGB(70,40,110)
 local PRIMARY = Color3.fromRGB(120,85,220)
@@ -33,8 +69,8 @@ win.BackgroundColor3 = BG
 win.BorderSizePixel = 0
 win.Parent = gui
 Instance.new("UICorner", win).CornerRadius = UDim.new(0,16)
-local wst = Instance.new("UIStroke", win); wst.Color = STROKE; wst.Thickness = 1.5
-local wgr = Instance.new("UIGradient", win); wgr.Rotation = 90
+local wst = Instance.new("UIStroke", win) wst.Color = STROKE wst.Thickness = 1.5
+local wgr = Instance.new("UIGradient", win) wgr.Rotation = 90
 wgr.Color = ColorSequence.new{
 	ColorSequenceKeypoint.new(0, Color3.fromRGB(12,12,16)),
 	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(20,16,28)),
@@ -79,7 +115,7 @@ local function icon(txt)
 	b.TextSize = 14
 	b.TextColor3 = TEXT
 	Instance.new("UICorner", b).CornerRadius = UDim.new(0,8)
-	local s = Instance.new("UIStroke", b); s.Color = Color3.fromRGB(80,60,120); s.Thickness = 1
+	local s = Instance.new("UIStroke", b) s.Color = Color3.fromRGB(80,60,120) s.Thickness = 1
 	b.Parent = btnHolder
 	return b
 end
@@ -135,15 +171,18 @@ local function halfRow()
 end
 
 label("Reveal Glass Panels")
-local execBtn = pill("Execute", PRIMARY); execBtn.Parent = content
+local execBtn = pill("Execute", PRIMARY) execBtn.Parent = content
 
 label("Break All Glass")
-local breakBtn = pill("Execute", PRIMARY); breakBtn.Parent = content
+local breakBtn = pill("Execute", PRIMARY) breakBtn.Parent = content
 
 label("Auto Win")
 local row = halfRow()
-local enableBtn = pill("Enable", PRIMARY); enableBtn.Size = UDim2.new(0.5,-5,1,0); enableBtn.Parent = row
-local disableBtn = pill("Disabled", MUTED); disableBtn.TextColor3 = TEXT; disableBtn.Size = UDim2.new(0.5,-5,1,0); disableBtn.Parent = row
+local enableBtn = pill("Enable", PRIMARY) enableBtn.Size = UDim2.new(0.5,-5,1,0) enableBtn.Parent = row
+local disableBtn = pill("Disabled", MUTED) disableBtn.TextColor3 = TEXT disableBtn.Size = UDim2.new(0.5,-5,1,0) disableBtn.Parent = row
+
+label("Bypass Anti Cheat (With Infinite Yield)")
+local acBtn = pill("Enable", PRIMARY) acBtn.Parent = content
 
 local status = Instance.new("TextLabel")
 status.BackgroundTransparency = 1
@@ -157,7 +196,7 @@ status.Parent = content
 
 execBtn.MouseButton1Click:Connect(function()
 	status.Text = "Status: Revealing..."
-	for _, step in pairs(workspace:GetChildren()) do 
+	for _, step in ipairs(workspace:GetChildren()) do
 		if step:IsA("Model") and step.Name == "Step" then
 			local glass_tempered = step:FindFirstChild("glass_tempered")
 			if glass_tempered then
@@ -171,32 +210,33 @@ execBtn.MouseButton1Click:Connect(function()
 				local glass_panel_weak = glass_weak:FindFirstChild("glass_panel_weak")
 				if glass_panel_weak and glass_panel_weak:IsA("BasePart") then
 					glass_panel_weak.Color = Color3.fromRGB(255, 0, 0)
-					local clone = glass_panel_weak:Clone()
-					clone.Name = "stepable"
-					clone.Parent = glass_weak
+					if not glass_weak:FindFirstChild("stepable") then
+						local clone = glass_panel_weak:Clone()
+						clone.Name = "stepable"
+						clone.Anchored = true
+						clone.CanCollide = true
+						clone.Transparency = 0
+						clone.CFrame = glass_panel_weak.CFrame
+						clone.Parent = glass_weak
+					end
 				end
 				local detector = glass_weak:FindFirstChild("Detector")
-				if detector then
-					detector:Destroy()
-				end
+				if detector then detector:Destroy() end
 			end
 		end
 	end
+	for _, inst in ipairs(workspace:GetDescendants()) do
+		if inst.Name == "PushZ" then pcall(function() inst:Destroy() end) end
+	end
 	local function isLobby(inst) return typeof(inst.Name) == "string" and inst.Name:lower() == "lobby" end
 	local function purgeLobby(inst) if inst and inst.Parent then inst:Destroy() end end
-	local function purgeAllLobbies()
-		for _, inst in ipairs(workspace:GetDescendants()) do
-			if isLobby(inst) then purgeLobby(inst) end
-		end
-	end
-	purgeAllLobbies()
+	for _, inst in ipairs(workspace:GetDescendants()) do if isLobby(inst) then purgeLobby(inst) end end
 	workspace.ChildAdded:Connect(function(child) if isLobby(child) then purgeLobby(child) end end)
 	workspace.DescendantAdded:Connect(function(desc)
 		if isLobby(desc) then purgeLobby(desc) return end
 		local p = desc.Parent
 		while p do
-			if isLobby(p) then purgeLobby(p) break
-			end
+			if isLobby(p) then purgeLobby(p) break end
 			p = p.Parent
 		end
 	end)
@@ -209,6 +249,7 @@ execBtn.MouseButton1Click:Connect(function()
 	p.CFrame = CFrame.new(-116.751099, 47.6960335, 88.6486359)
 	p.Transparency = 0.75
 	p.Parent = workspace
+	scanAndHookWeakPanels()
 	status.Text = "Status: Reveal complete"
 end)
 
@@ -240,11 +281,7 @@ breakBtn.MouseButton1Click:Connect(function()
 			end
 		end
 	end
-	if fired > 0 then
-		status.Text = "Status: Triggered "..tostring(fired).." detectors"
-	else
-		status.Text = "Status: No detectors found"
-	end
+	status.Text = fired > 0 and ("Status: Triggered "..fired.." detectors") or "Status: No detectors found"
 end)
 
 local enabled = false
@@ -311,6 +348,84 @@ end)
 
 setDisabledUI()
 
+local acEnabled = false
+local acConns = {}
+local disableList = {
+	"AntiFly","AntiTeleportClient","AntiTeleport","DisableClimb",
+	"CharacterTurnDelay","AntiHump","Main"
+}
+
+local function disconnectAll(tbl)
+	for _,c in ipairs(tbl) do pcall(function() c:Disconnect() end) end
+	table.clear(tbl)
+end
+
+local function forceDisableScript(scr)
+	if scr and (scr:IsA("LocalScript") or scr:IsA("Script")) then
+		if scr.Disabled ~= true then scr.Disabled = true end
+		if not scr:GetAttribute("__hooked") then
+			scr:SetAttribute("__hooked", true)
+			table.insert(acConns, scr:GetPropertyChangedSignal("Disabled"):Connect(function()
+				if acEnabled and scr.Disabled ~= true then
+					scr.Disabled = true
+				end
+			end))
+		end
+	end
+end
+
+local function acEnforce(character)
+	for _, n in ipairs(disableList) do
+		for _, inst in ipairs(character:GetDescendants()) do
+			if inst.Name == n then
+				forceDisableScript(inst)
+			end
+		end
+	end
+	local authorized = character:FindFirstChild("AuthorizedTeleport")
+	if authorized and authorized:IsA("BoolValue") then
+		if authorized.Value == false then authorized.Value = true end
+		if not authorized:GetAttribute("__hooked") then
+			authorized:SetAttribute("__hooked", true)
+			table.insert(acConns, authorized.Changed:Connect(function()
+				if acEnabled and authorized.Value == false then
+					authorized.Value = true
+				end
+			end))
+		end
+	end
+end
+
+local function acManageCharacter(character)
+	acEnforce(character)
+	table.insert(acConns, character.DescendantAdded:Connect(function(inst)
+		if table.find(disableList, inst.Name) then
+			forceDisableScript(inst)
+		end
+	end))
+	local hb
+	hb = RunService.Heartbeat:Connect(function()
+		if not acEnabled then hb:Disconnect() return end
+		acEnforce(character)
+	end)
+	table.insert(acConns, hb)
+end
+
+acBtn.MouseButton1Click:Connect(function()
+	if acEnabled then return end
+	acEnabled = true
+	acBtn.Text = "Enabled"
+	acBtn.BackgroundColor3 = Color3.fromRGB(70,68,90)
+	status.Text = "Status: Anti Cheat bypass enabled + Infinite Yield loaded"
+	pcall(function()
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+	end)
+	if player.Character then acManageCharacter(player.Character) end
+	table.insert(acConns, player.CharacterAdded:Connect(function(newChar)
+		if acEnabled then acManageCharacter(newChar) end
+	end))
+end)
+
 local minimized, saved = false, win.Size
 minBtn.MouseButton1Click:Connect(function()
 	minimized = not minimized
@@ -324,15 +439,25 @@ minBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
-closeBtn.MouseButton1Click:Connect(function() gui:Destroy() end)
+closeBtn.MouseButton1Click:Connect(function()
+	gui:Destroy()
+	disconnectAll(acConns)
+	acEnabled = false
+end)
 
 do
 	local drag = false
 	local startPos, startMouse
 	titleBar.InputBegan:Connect(function(i)
 		if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-			drag = true; startMouse = i.Position; startPos = win.Position
-			i.Changed:Connect(function() if i.UserInputState == Enum.UserInputState.End then drag = false end end)
+			drag = true
+			startMouse = i.Position
+			startPos = win.Position
+			i.Changed:Connect(function()
+				if i.UserInputState == Enum.UserInputState.End then
+					drag = false
+				end
+			end)
 		end
 	end)
 	titleBar.InputChanged:Connect(function(i)
@@ -345,3 +470,5 @@ end
 
 win.Size = UDim2.fromOffset(BASE_W, 0)
 TweenService:Create(win, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromOffset(BASE_W, BASE_H)}):Play()
+
+scanAndHookWeakPanels()
