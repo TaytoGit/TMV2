@@ -3,6 +3,7 @@
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 local pg = player:WaitForChild("PlayerGui")
@@ -173,8 +174,10 @@ end
 label("Reveal Glass Panels")
 local execBtn = pill("Execute", PRIMARY) execBtn.Parent = content
 
-label("Break All Glass")
-local breakBtn = pill("Execute", PRIMARY) breakBtn.Parent = content
+label("AFK Auto Win")
+local afkRow = halfRow()
+local afkEnableBtn = pill("Enable", PRIMARY) afkEnableBtn.Size = UDim2.new(0.5,-5,1,0) afkEnableBtn.Parent = afkRow
+local afkDisableBtn = pill("Disabled", MUTED) afkDisableBtn.TextColor3 = TEXT afkDisableBtn.Size = UDim2.new(0.5,-5,1,0) afkDisableBtn.Parent = afkRow
 
 label("Auto Win")
 local row = halfRow()
@@ -198,90 +201,144 @@ execBtn.MouseButton1Click:Connect(function()
 	status.Text = "Status: Revealing..."
 	for _, step in ipairs(workspace:GetChildren()) do
 		if step:IsA("Model") and step.Name == "Step" then
-			local glass_tempered = step:FindFirstChild("glass_tempered")
-			if glass_tempered then
-				local glass_panel = glass_tempered:FindFirstChild("glass_panel")
-				if glass_panel and glass_panel:IsA("BasePart") then
-					glass_panel.Color = Color3.fromRGB(0, 255, 0)
-				end
+			local gt = step:FindFirstChild("glass_tempered")
+			if gt then
+				local gp = gt:FindFirstChild("glass_panel")
+				if gp and gp:IsA("BasePart") then gp.Color = Color3.fromRGB(0,255,0) end
 			end
-			local glass_weak = step:FindFirstChild("glass_weak")
-			if glass_weak then
-				local glass_panel_weak = glass_weak:FindFirstChild("glass_panel_weak")
-				if glass_panel_weak and glass_panel_weak:IsA("BasePart") then
-					glass_panel_weak.Color = Color3.fromRGB(255, 0, 0)
-					if not glass_weak:FindFirstChild("stepable") then
-						local clone = glass_panel_weak:Clone()
+			local gw = step:FindFirstChild("glass_weak")
+			if gw then
+				local weak = gw:FindFirstChild("glass_panel_weak")
+				if weak and weak:IsA("BasePart") then
+					weak.Color = Color3.fromRGB(255,0,0)
+					if not gw:FindFirstChild("stepable") then
+						local clone = weak:Clone()
 						clone.Name = "stepable"
 						clone.Anchored = true
 						clone.CanCollide = true
 						clone.Transparency = 0
-						clone.CFrame = glass_panel_weak.CFrame
-						clone.Parent = glass_weak
+						clone.CFrame = weak.CFrame
+						clone.Parent = gw
 					end
 				end
-				local detector = glass_weak:FindFirstChild("Detector")
+				local detector = gw:FindFirstChild("Detector")
 				if detector then detector:Destroy() end
 			end
 		end
 	end
 	for _, inst in ipairs(workspace:GetDescendants()) do
-		if inst.Name == "PushZ" then pcall(function() inst:Destroy() end) end
+		if typeof(inst.Name) == "string" and inst.Name:lower() == "lobby" then pcall(function() inst:Destroy() end) end
 	end
-	local function isLobby(inst) return typeof(inst.Name) == "string" and inst.Name:lower() == "lobby" end
-	local function purgeLobby(inst) if inst and inst.Parent then inst:Destroy() end end
-	for _, inst in ipairs(workspace:GetDescendants()) do if isLobby(inst) then purgeLobby(inst) end end
-	workspace.ChildAdded:Connect(function(child) if isLobby(child) then purgeLobby(child) end end)
+	workspace.ChildAdded:Connect(function(child)
+		if typeof(child.Name) == "string" and child.Name:lower() == "lobby" then pcall(function() child:Destroy() end) end
+	end)
 	workspace.DescendantAdded:Connect(function(desc)
-		if isLobby(desc) then purgeLobby(desc) return end
+		if typeof(desc.Name) == "string" and desc.Name:lower() == "lobby" then pcall(function() desc:Destroy() end) return end
 		local p = desc.Parent
 		while p do
-			if isLobby(p) then purgeLobby(p) break end
+			if typeof(p.Name) == "string" and p.Name:lower() == "lobby" then pcall(function() p:Destroy() end) break end
 			p = p.Parent
 		end
 	end)
+	for _, inst in ipairs(workspace:GetDescendants()) do
+		if typeof(inst.Name) == "string" and inst.Name:match("PushZ") then pcall(function() inst:Destroy() end) end
+	end
 	local existing = workspace:FindFirstChild("OOOOOOOOOOOKKK")
-	if existing then existing:Destroy() end
-	local p = Instance.new("Part")
-	p.Name = "OOOOOOOOOOOKKK"
-	p.Anchored = true
-	p.Size = Vector3.new(350, 2, 400)
-	p.CFrame = CFrame.new(-116.751099, 47.6960335, 88.6486359)
-	p.Transparency = 0.75
-	p.Parent = workspace
+	if existing then pcall(function() existing:Destroy() end) end
+	local pad = Instance.new("Part")
+	pad.Name = "OOOOOOOOOOOKKK"
+	pad.Anchored = true
+	pad.Size = Vector3.new(350, 2, 400)
+	pad.CFrame = CFrame.new(-116.751099, 47.6960335, 88.6486359)
+	pad.Transparency = 0.75
+	pad.Parent = workspace
 	scanAndHookWeakPanels()
 	status.Text = "Status: Reveal complete"
 end)
 
-breakBtn.MouseButton1Click:Connect(function()
-	status.Text = "Status: Breaking all glass..."
-	local lp = Players.LocalPlayer
-	local function getHRP()
-		local char = lp.Character or lp.CharacterAdded:Wait()
-		return char:WaitForChild("HumanoidRootPart")
-	end
-	local function hasTouchInterest(part)
-		if not part or not part:IsA("BasePart") then return false end
-		return part:FindFirstChildWhichIsA("TouchTransmitter") or part:FindFirstChild("TouchInterest")
-	end
-	local fired = 0
-	local hrp = getHRP()
-	for _, inst in ipairs(workspace:GetDescendants()) do
-		if inst:IsA("Model") and inst.Name == "Step" then
-			local gw = inst:FindFirstChild("glass_weak")
-			if gw then
-				local detector = gw:FindFirstChild("Detector")
-				if hasTouchInterest(detector) then
-					local ok = pcall(function()
-						firetouchinterest(hrp, detector, 0)
-						firetouchinterest(hrp, detector, 1)
-					end)
-					if ok then fired += 1 end
-				end
-			end
+local afkEnabled = false
+local afkTouchConn
+local exitPart, exitOrigCFrame, exitOrigSize, exitOrigAnchored
+local winAFKPart, winAFKOrigCFrame, winAFKOrigSize, winAFKOrigAnchored
+local EXIT_TARGET_CF = CFrame.new(-16.897646, 62.6035919, 224.13765, -1,0,0, 0,1,0, 0,0,-1)
+local EXIT_TARGET_SIZE = Vector3.new(39.866695404052734, 26.350013732910156, 39.56122589111328)
+local lastTouchAt = 0
+
+local function setAFKEnabledUI()
+	afkEnableBtn.Text = "Enabled"
+	afkEnableBtn.BackgroundColor3 = Color3.fromRGB(70,68,90)
+	afkDisableBtn.Text = "Disable"
+	afkDisableBtn.BackgroundColor3 = PRIMARY
+	afkDisableBtn.TextColor3 = Color3.new(1,1,1)
+end
+
+local function setAFKDisabledUI()
+	afkEnableBtn.Text = "Enable"
+	afkEnableBtn.BackgroundColor3 = PRIMARY
+	afkDisableBtn.Text = "Disabled"
+	afkDisableBtn.BackgroundColor3 = MUTED
+	afkDisableBtn.TextColor3 = TEXT
+end
+
+afkEnableBtn.MouseButton1Click:Connect(function()
+	if afkEnabled then return end
+	if _G.__AutoWinEnabled then status.Text = "Status: Disable Auto Win first"; return end
+
+	exitPart = workspace:FindFirstChild("EXIT")
+	winAFKPart = workspace:FindFirstChild("WinPart")
+	if not exitPart then status.Text = "Status: EXIT not found"; return end
+	if not winAFKPart then status.Text = "Status: WinPart not found"; return end
+
+	if not exitOrigCFrame then exitOrigCFrame, exitOrigSize, exitOrigAnchored = exitPart.CFrame, exitPart.Size, exitPart.Anchored end
+	if not winAFKOrigCFrame then winAFKOrigCFrame, winAFKOrigSize, winAFKOrigAnchored = winAFKPart.CFrame, winAFKPart.Size, winAFKPart.Anchored end
+
+	afkEnabled = true
+
+	exitPart.Anchored = true
+	exitPart.Size = EXIT_TARGET_SIZE
+	exitPart.CFrame = EXIT_TARGET_CF
+
+	if afkTouchConn then afkTouchConn:Disconnect() afkTouchConn = nil end
+	afkTouchConn = exitPart.Touched:Connect(function(hit)
+		if not afkEnabled then return end
+		local ch = player.Character
+		if not ch or not hit or not hit:IsDescendantOf(ch) then return end
+		local now = tick()
+		if now - lastTouchAt < 0.25 then return end
+		lastTouchAt = now
+		local hrp = ch:FindFirstChild("HumanoidRootPart")
+		if not hrp then return end
+		if winAFKPart then
+			winAFKPart.Anchored = true
+			winAFKPart.Size = EXIT_TARGET_SIZE
+			winAFKPart.CFrame = CFrame.new(hrp.Position)
 		end
+	end)
+
+	setAFKEnabledUI()
+	status.Text = "Status: AFK Auto Win enabled"
+end)
+
+afkDisableBtn.MouseButton1Click:Connect(function()
+	if not afkEnabled then return end
+	afkEnabled = false
+	if afkTouchConn then afkTouchConn:Disconnect() afkTouchConn = nil end
+	if exitPart and exitOrigCFrame then
+		pcall(function()
+			exitPart.Size = exitOrigSize
+			exitPart.CFrame = exitOrigCFrame
+			exitPart.Anchored = exitOrigAnchored
+		end)
 	end
-	status.Text = fired > 0 and ("Status: Triggered "..fired.." detectors") or "Status: No detectors found"
+	if winAFKPart and winAFKOrigCFrame then
+		pcall(function()
+			winAFKPart.Size = winAFKOrigSize
+			winAFKPart.CFrame = winAFKOrigCFrame
+			winAFKPart.Anchored = winAFKOrigAnchored
+		end)
+	end
+	setAFKDisabledUI()
+	status.Text = "Status: AFK Auto Win disabled"
 end)
 
 local enabled = false
@@ -317,22 +374,24 @@ local function loop()
 				break
 			end
 		end
-		local char = player.Character
-		local hrp = char and char:FindFirstChild("HumanoidRootPart")
-		if hrp and winPart then
+		local ch2 = player.Character
+		local hrp2 = ch2 and ch2:FindFirstChild("HumanoidRootPart")
+		if hrp2 and winPart then
 			winPart.Anchored = true
-			winPart.CFrame = CFrame.new(hrp.Position)
-			task.wait(0.25)
+			winPart.CFrame = CFrame.new(hrp2.Position)
+			wait(0.25)
 			winPart.CFrame = targetCFrame
 		end
-		task.wait(1)
+		wait(1)
 	end
 	running = false
 end
 
 enableBtn.MouseButton1Click:Connect(function()
 	if enabled then return end
+	if afkEnabled then status.Text = "Status: Disable AFK Auto Win first"; return end
 	enabled = true
+	_G.__AutoWinEnabled = true
 	setEnabledUI()
 	status.Text = "Status: Auto Win enabled"
 	loop()
@@ -341,12 +400,14 @@ end)
 disableBtn.MouseButton1Click:Connect(function()
 	if not enabled then return end
 	enabled = false
+	_G.__AutoWinEnabled = nil
 	if winPart then winPart.CFrame = targetCFrame end
 	setDisabledUI()
 	status.Text = "Status: Auto Win disabled"
 end)
 
 setDisabledUI()
+setAFKDisabledUI()
 
 local acEnabled = false
 local acConns = {}
@@ -366,9 +427,7 @@ local function forceDisableScript(scr)
 		if not scr:GetAttribute("__hooked") then
 			scr:SetAttribute("__hooked", true)
 			table.insert(acConns, scr:GetPropertyChangedSignal("Disabled"):Connect(function()
-				if acEnabled and scr.Disabled ~= true then
-					scr.Disabled = true
-				end
+				if acEnabled and scr.Disabled ~= true then scr.Disabled = true end
 			end))
 		end
 	end
@@ -377,9 +436,7 @@ end
 local function acEnforce(character)
 	for _, n in ipairs(disableList) do
 		for _, inst in ipairs(character:GetDescendants()) do
-			if inst.Name == n then
-				forceDisableScript(inst)
-			end
+			if inst.Name == n then forceDisableScript(inst) end
 		end
 	end
 	local authorized = character:FindFirstChild("AuthorizedTeleport")
@@ -388,9 +445,7 @@ local function acEnforce(character)
 		if not authorized:GetAttribute("__hooked") then
 			authorized:SetAttribute("__hooked", true)
 			table.insert(acConns, authorized.Changed:Connect(function()
-				if acEnabled and authorized.Value == false then
-					authorized.Value = true
-				end
+				if acEnabled and authorized.Value == false then authorized.Value = true end
 			end))
 		end
 	end
@@ -399,9 +454,7 @@ end
 local function acManageCharacter(character)
 	acEnforce(character)
 	table.insert(acConns, character.DescendantAdded:Connect(function(inst)
-		if table.find(disableList, inst.Name) then
-			forceDisableScript(inst)
-		end
+		if table.find(disableList, inst.Name) then forceDisableScript(inst) end
 	end))
 	local hb
 	hb = RunService.Heartbeat:Connect(function()
@@ -443,32 +496,35 @@ closeBtn.MouseButton1Click:Connect(function()
 	gui:Destroy()
 	disconnectAll(acConns)
 	acEnabled = false
+	if afkTouchConn then afkTouchConn:Disconnect() end
 end)
 
 do
-	local drag = false
-	local startPos, startMouse
-	titleBar.InputBegan:Connect(function(i)
-		if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-			drag = true
-			startMouse = i.Position
+	local dragging = false
+	local dragStart, startPos
+	local function updateDrag(input)
+		local delta = input.Position - dragStart
+		win.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+	end
+	titleBar.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			dragStart = input.Position
 			startPos = win.Position
-			i.Changed:Connect(function()
-				if i.UserInputState == Enum.UserInputState.End then
-					drag = false
-				end
-			end)
 		end
 	end)
-	titleBar.InputChanged:Connect(function(i)
-		if drag and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
-			local d = i.Position - startMouse
-			win.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
+	UIS.InputChanged:Connect(function(input)
+		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+			updateDrag(input)
+		end
+	end)
+	UIS.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = false
 		end
 	end)
 end
 
 win.Size = UDim2.fromOffset(BASE_W, 0)
 TweenService:Create(win, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromOffset(BASE_W, BASE_H)}):Play()
-
 scanAndHookWeakPanels()
